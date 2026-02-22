@@ -6,7 +6,7 @@ Guidelines for the refactoring process itself.
 
 Each step should be atomic and verifiable.
 
-```ts
+```bash
 // Bad: One giant commit
 git commit -m "Refactor user module"
 
@@ -28,7 +28,7 @@ git commit -m "Replace inline validation with validateEmail call"
 
 Don't mix refactoring techniques in one commit.
 
-```ts
+```bash
 // Bad: Mixing techniques
 git commit -m "Rename user to account and extract validation"
 
@@ -100,7 +100,7 @@ Apply transformations in order of priority (simpler first).
 
 Don't mix test refactoring with production code refactoring.
 
-```ts
+```bash
 // Commit 1: Refactor production code
 git commit -m "Extract UserService from UserController"
 

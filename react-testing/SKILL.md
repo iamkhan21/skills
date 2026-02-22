@@ -1,13 +1,17 @@
 ---
 name: react-testing
-description: React testing with Testing Library. Use when writing tests for React components, hooks, or user interactions; debugging failing tests; refactoring test files; or questions about testing approach. Triggers for: (1) *.test.tsx, *.spec.ts files, (2) render, screen, userEvent usage, (3) Testing Library questions.
+description: Testing React components, hooks, and interactions with React Testing Library. Use for writing, debugging, or refactoring tests.
+triggers:
+  - file_globs: ["*.test.tsx", "*.spec.ts", "*.spec.tsx"]
+  - keywords: ["render", "screen", "userEvent"]
+  - topics: ["Testing Library", "React Testing Library", "component tests", "hook tests"]
 ---
 
 # React Testing
 
 ## Quick Start
 
-```typescript
+```tsx
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 

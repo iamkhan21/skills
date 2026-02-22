@@ -7,7 +7,7 @@ Tests need refactoring too. Keep them readable and maintainable.
 ```ts
 // Bad: Testing implementation details
 describe('UserService', () => {
-  it('sets isLoading to true then false', () => {
+  it('sets isLoading to true then false', async () => {
     const service = new UserService()
     service.loadUsers()
     expect(service.isLoading).toBe(true)

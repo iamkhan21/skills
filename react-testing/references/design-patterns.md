@@ -33,7 +33,7 @@ Tests interact with simple props/callbacks, not internal complexity.
 
 Accept dependencies via props or context:
 
-```typescript
+```tsx
 // BAD: Creates dependency inside
 function UserProfile() {
   const user = useFetch("/api/user"); // Hard to mock
@@ -52,7 +52,7 @@ render(<UserProfile fetchUser={() => Promise.resolve(mockUser)} />);
 
 Prefer observable output over hidden side effects:
 
-```typescript
+```tsx
 // BAD: Mutates global singleton
 function login(credentials) {
   authService.login(credentials);
@@ -77,7 +77,7 @@ render(<LoginForm onLogin={onLogin} />);
 
 Fewer props = fewer test scenarios:
 
-```typescript
+```tsx
 // BAD: Many props, many combinations
 <Button
   isLoading={false}

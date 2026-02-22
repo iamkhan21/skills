@@ -9,7 +9,7 @@
 
 Combine `userEvent.setup()` with render for consistent test setup:
 
-```typescript
+```tsx
 // test-utils.tsx
 function setup(jsx: React.ReactElement) {
   const user = userEvent.setup();
@@ -32,7 +32,7 @@ Use `screen` for all DOM queries—single source of truth.
 
 Extract repeated interactions into reusable actions:
 
-```typescript
+```tsx
 // test-utils.tsx
 function setupLoginForm(overrides: Partial<LoginFormProps> = {}) {
   const user = userEvent.setup();

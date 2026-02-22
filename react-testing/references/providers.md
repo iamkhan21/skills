@@ -8,7 +8,7 @@
 
 Create a custom render that includes required providers:
 
-```typescript
+```tsx
 // test-utils.tsx
 import { render, RenderOptions } from "@testing-library/react";
 import { BrowserRouter } from "react-router-dom";
@@ -38,7 +38,7 @@ export function renderWithProviders(
 
 ### React Router
 
-```typescript
+```tsx
 <MemoryRouter initialEntries={["/initial-path"]}>
   {children}
 </MemoryRouter>
@@ -46,7 +46,7 @@ export function renderWithProviders(
 
 ### Redux
 
-```typescript
+```tsx
 <Provider store={createStore(reducer, preloadedState)}>
   {children}
 </Provider>
@@ -54,7 +54,7 @@ export function renderWithProviders(
 
 ### Theme
 
-```typescript
+```tsx
 <ThemeProvider theme="dark">
   {children}
 </ThemeProvider>
@@ -64,7 +64,7 @@ export function renderWithProviders(
 
 For tests that need only specific providers:
 
-```typescript
+```tsx
 function renderWithRouter(ui: React.ReactElement) {
   return render(ui, { wrapper: MemoryRouter });
 }

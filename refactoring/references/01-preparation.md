@@ -60,7 +60,7 @@ it('returns -1 for empty cart (current behavior)', () => {
 
 Make the compiler help you find issues.
 
-```json
+```jsonc
 // tsconfig.json - enable strict mode
 {
   "compilerOptions": {
@@ -72,7 +72,7 @@ Make the compiler help you find issues.
 }
 ```
 
-```js
+```
 // .eslintrc - treat warnings as errors
 {
   "rules": {

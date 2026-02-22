@@ -63,7 +63,7 @@ test("updates when prop changes", () => {
 
 ## Testing with Context
 
-```typescript
+```tsx
 const wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => (
   <UserContext.Provider value={{ user: mockUser }}>
     {children}

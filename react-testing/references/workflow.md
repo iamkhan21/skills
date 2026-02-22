@@ -34,7 +34,7 @@ Each cycle:
 
 ### Example Cycle
 
-```typescript
+```tsx
 // 1. Write failing test
 test("shows error when email is invalid", async () => {
   const { user } = setup(<LoginForm />);

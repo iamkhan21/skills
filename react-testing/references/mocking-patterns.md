@@ -143,7 +143,7 @@ Object.defineProperty(window, "matchMedia", {
 
 ### Adapter Pattern
 
-```typescript
+```tsx
 // analytics/adapter.ts
 export const analytics = {
   track: (event: string, data?: object) => {
@@ -189,7 +189,7 @@ jest.mock("@stripe/stripe-js", () => ({
 
 ### Fake Timers
 
-```typescript
+```tsx
 beforeEach(() => {
   jest.useFakeTimers();
 });
@@ -213,7 +213,7 @@ test("shows notification after delay", () => {
 
 ### Custom Render
 
-```typescript
+```tsx
 // test-utils.tsx
 import { render, RenderOptions } from "@testing-library/react";
 import { ThemeProvider } from "../theme-context";

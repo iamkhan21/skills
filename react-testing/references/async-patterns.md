@@ -37,7 +37,7 @@ await waitFor(() => expect(mockCallback).toHaveBeenCalled());
 
 ## Fake Timers
 
-```typescript
+```tsx
 beforeEach(() => jest.useFakeTimers());
 afterEach(() => jest.useRealTimers());
 

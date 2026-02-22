@@ -32,7 +32,7 @@ One commit for formatting. Don't mix with other changes.
 
 Fix each lint rule as separate commit.
 
-```js
+```jsonc
 // .eslintrc.json
 {
   "rules": {

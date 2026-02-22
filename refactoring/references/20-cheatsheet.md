@@ -49,7 +49,7 @@ Quick reference for common refactoring techniques.
 
 ### Functional Pipeline
 
-```ts
+```
 // Pattern
 items
   .filter(predicate)
