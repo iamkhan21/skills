@@ -7,14 +7,14 @@ Guidelines for the refactoring process itself.
 Each step should be atomic and verifiable.
 
 ```bash
-// Bad: One giant commit
-git commit -m "Refactor user module"
+# Bad: One giant commit
+git commit -m "refactor: rewrite user module"
 
-// Good: Series of small commits
-git commit -m "Extract validateEmail function"
-git commit -m "Move validateEmail to validation module"
-git commit -m "Add unit tests for validateEmail"
-git commit -m "Replace inline validation with validateEmail call"
+# Good: Series of small commits
+git commit -m "refactor: extract validateEmail function"
+git commit -m "refactor: move validateEmail to validation module"
+git commit -m "test: add unit tests for validateEmail"
+git commit -m "refactor: replace inline validation with validateEmail call"
 ```
 
 ### Why Small Steps?
@@ -29,12 +29,12 @@ git commit -m "Replace inline validation with validateEmail call"
 Don't mix refactoring techniques in one commit.
 
 ```bash
-// Bad: Mixing techniques
-git commit -m "Rename user to account and extract validation"
+# Bad: Mixing techniques
+git commit -m "refactor: rename user to account and extract validation"
 
-// Good: Separate commits
-git commit -m "Rename user to account"
-git commit -m "Extract validation logic"
+# Good: Separate commits
+git commit -m "refactor: rename user to account"
+git commit -m "refactor: extract validation logic"
 ```
 
 ## No Features, No Bug Fixes
@@ -101,15 +101,41 @@ Apply transformations in order of priority (simpler first).
 Don't mix test refactoring with production code refactoring.
 
 ```bash
-// Commit 1: Refactor production code
-git commit -m "Extract UserService from UserController"
+# Commit 1: Refactor production code
+git commit -m "refactor: extract UserService from UserController"
 
-// Commit 2: Refactor tests
-git commit -m "Update tests to use UserService directly"
+# Commit 2: Refactor tests
+git commit -m "test: update tests to use UserService directly"
 
-// Commit 3: Improve test structure
-git commit -m "Extract test fixtures for user tests"
+# Commit 3: Improve test structure
+git commit -m "test: extract test fixtures for user tests"
 ```
+
+## When to Stop
+
+Refactoring can become an end in itself. Stop when:
+
+- **Original pain point is resolved** — the problem that motivated the refactor is fixed
+- **Scope boundary is reached** — you defined what's in/out at the start; respect it
+- **Diminishing returns** — each subsequent change improves less than the last
+- **Risk exceeds benefit** — further changes risk introducing behavior changes
+- **You're gold-plating** — making code "perfect" beyond what the team needs
+
+If you discover new issues during refactoring, document them as separate tasks rather than expanding scope. A completed refactor that solves the original problem is better than an ambitious one that never lands.
+
+## Feature Flags for Safe Rollout
+
+For refactors that touch production behavior boundaries (even when behavior shouldn't change), consider feature flags to deploy intermediate states safely:
+
+```ts
+// Gradually roll out the new code path
+if (featureFlags.isEnabled('new-user-service')) {
+  return newUserService.getUser(id)
+}
+return legacyUserService.getUser(id)
+```
+
+This lets you ship refactoring work incrementally and roll back instantly if something breaks. Remove the flag once the new path is proven stable.
 
 ## Pull Request Guidelines
 

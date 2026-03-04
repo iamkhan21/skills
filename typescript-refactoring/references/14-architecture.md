@@ -263,6 +263,55 @@ class Order {
 }
 ```
 
+## Strangler Fig Pattern
+
+For large-scale migrations where you can't rewrite everything at once. Gradually replace old code while keeping the system running.
+
+### How It Works
+
+1. **Identify a seam** — a boundary where old and new code can coexist
+2. **Build the new implementation** alongside the old one
+3. **Route traffic** through a facade that delegates to old or new
+4. **Migrate incrementally** — move one feature/route/module at a time
+5. **Remove the old code** once all traffic flows through the new path
+
+### Implementation
+
+```ts
+// Step 1: Create a facade that delegates to old implementation
+class UserServiceFacade implements UserService {
+  constructor(
+    private legacy: LegacyUserService,
+    private modern: ModernUserService,
+    private flags: FeatureFlags
+  ) {}
+
+  async getUser(id: string): Promise<User> {
+    if (this.flags.isEnabled('modern-user-service')) {
+      return this.modern.getUser(id)
+    }
+    return this.legacy.getUser(id)
+  }
+}
+
+// Step 2: Migrate one method at a time
+// Step 3: When all methods use modern, remove facade and legacy
+```
+
+### When to Use
+
+- Replacing a framework (e.g., Express → Fastify)
+- Migrating to a new database
+- Rewriting a module with different architecture
+- Moving from monolith to services
+
+### Key Principles
+
+- Old and new must coexist — never a "big bang" cutover
+- Each step is independently deployable
+- Rollback is always possible (just route back to old code)
+- The facade is temporary scaffolding — remove it when done
+
 ## Checklist
 
 - [ ] Layers clearly separated

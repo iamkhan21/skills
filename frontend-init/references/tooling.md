@@ -17,13 +17,12 @@ This skill assumes the project is already scaffolded. It adds a baseline for tes
 
 Install:
 - `vitest`
+- `happy-dom` (lightweight DOM environment for tests)
 - `oxlint`
 - `oxfmt`
 
-Example:
-
 ```sh
-pnpm add -D vitest oxlint oxfmt
+pnpm add -D vitest happy-dom oxlint oxfmt
 ```
 
 ## Add `package.json` scripts
@@ -35,8 +34,8 @@ Add (or align with existing scripts):
 - `test:run`: `vitest run`
 - `lint`: `oxlint`
 - `lint:fix`: `oxlint --fix`
-- `format`: `oxfmt`
-- `format:check`: `oxfmt --check`
+- `fmt`: `oxfmt` (Oxc convention; `format` also fine)
+- `fmt:check`: `oxfmt --check`
 
 Notes:
 - Prefer keeping scripts stable across projects; adapt names only if the repo already has conventions.
@@ -53,15 +52,58 @@ pnpm exec oxlint --init
 - Config discovery:
   - Use either `.oxlintrc.json` or `oxlint.config.ts` (not both).
 
-## Vitest defaults
+## Vitest config
 
+Create a `vitest.config.ts` (or add to the existing Vite config):
+
+```ts
+import { defineConfig } from 'vitest/config'
+
+export default defineConfig({
+  test: {
+    globals: true,
+    environment: 'happy-dom', // lighter and faster than jsdom
+  },
+})
+```
+
+- Install `happy-dom` as a dev dep: `pnpm add -D happy-dom`
+- `globals: true` makes `describe`, `it`, `expect` available without imports.
+  If enabled, add `"types": ["vitest/globals"]` to `tsconfig.json` `compilerOptions` for type support.
 - Start with file-based tests: `**/*.test.ts` / `**/*.spec.ts`.
-- If a browser-like environment is needed, set `environment: "jsdom"` and add `jsdom` as a dev dependency.
+- For files that need a different environment, use the per-file override docblock:
+
+  ```ts
+  // @vitest-environment node
+  ```
+
+- If the project uses `@testing-library`, add a setup file:
+
+  ```ts
+  // vitest.config.ts
+  setupFiles: ['./src/test/setup.ts'],
+  ```
+
+  ```ts
+  // src/test/setup.ts
+  import '@testing-library/jest-dom/vitest'
+  ```
 
 ## Optional: UI/CSS choice impacts tooling
 
 Ask: "Do you want a UI/component library or CSS framework? If yes, which one?"
 
 Then adjust only what is necessary:
-- Tailwind/utility CSS: add its postcss tooling and ensure formatting/linting ignores generated files.
+- Tailwind/utility CSS: add its PostCSS tooling and ensure formatting/linting ignores generated files.
 - Component libraries (framework-specific): add them only after confirming framework (React/Vue/etc).
+
+## Optional: @testing-library
+
+If the project uses React, Vue, or Svelte, install the matching testing-library:
+
+```sh
+# React example
+pnpm add -D @testing-library/react @testing-library/jest-dom
+```
+
+Then wire up the setup file as described in the Vitest config section above.

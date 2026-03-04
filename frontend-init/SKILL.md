@@ -40,7 +40,7 @@ Links:
   - `typecheck` (runs `tsc --noEmit`)
   - `test`, `test:run`
   - `lint`, `lint:fix`
-  - `format`, `format:check`
+  - `fmt`, `fmt:check`
 
 Details: `frontend-init/references/tooling.md`
 

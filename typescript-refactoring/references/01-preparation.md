@@ -58,7 +58,7 @@ it('returns -1 for empty cart (current behavior)', () => {
 
 ## Stricter Linter/Compiler
 
-Make the compiler help you find issues.
+Make the compiler and linter help you find issues.
 
 ```jsonc
 // tsconfig.json - enable strict mode
@@ -72,14 +72,30 @@ Make the compiler help you find issues.
 }
 ```
 
-```
-// .eslintrc - treat warnings as errors
+### Biome (recommended)
+
+```jsonc
+// biome.json
 {
-  "rules": {
-    "no-unused-vars": "error",
-    "@typescript-eslint/explicit-function-return-type": "error"
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "correctness": {
+        "noUnusedVariables": "error"
+      }
+    }
+  },
+  "formatter": {
+    "enabled": true
   }
 }
+```
+
+### OxLint (alternative)
+
+```bash
+npx oxlint .
 ```
 
 ### Incremental Strictness

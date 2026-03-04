@@ -124,8 +124,8 @@ npm test
 # Check coverage
 npm run test:coverage
 
-# Run linter
-npm run lint
+# Run linter (Biome)
+npx @biomejs/biome check .
 ```
 
 ### During Refactoring
@@ -134,23 +134,25 @@ npm run lint
 # After each change
 npm test -- --related
 
-# Format code
-npm run format
+# Format and lint
+npx @biomejs/biome check --write .
 
 # Type check
 npm run typecheck
 ```
 
-### Commit Message Format
+### Commit Message Format (Conventional Commits)
 
 ```
-<technique>: <description>
+<type>: <description>
 
-# Examples
-extract: move validation to separate function
-rename: user -> account for clarity
-remove: dead code in payment module
-simplify: reduce nesting with guard clauses
+# Common types for refactoring
+refactor: extract validation to separate function
+refactor: rename user to account for clarity
+refactor: reduce nesting with guard clauses
+chore: remove dead code in payment module
+style: apply Biome formatting
+test: add characterization tests for UserService
 ```
 
 ## Technique Decision Tree

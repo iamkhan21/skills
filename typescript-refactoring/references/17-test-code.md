@@ -2,6 +2,8 @@
 
 Tests need refactoring too. Keep them readable and maintainable.
 
+> **Note:** For React component and hook testing specifically (render, screen, userEvent, MSW), defer to the `react-testing` skill. This file covers general test code refactoring patterns.
+
 ## Test Behavior, Not Implementation
 
 ```ts

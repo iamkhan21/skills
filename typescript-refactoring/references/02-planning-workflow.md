@@ -105,6 +105,13 @@ Each commit:
 - One logical change
 - Easy to revert if needed
 
+## Planning Quality Checks
+
+- **Problem statement**: Describe from the developer's perspective, include pain points, explain why current state is problematic
+- **Commits**: Each commit = one logical change, leaves code working, tests pass, easy to bisect
+- **Decision document**: Record WHY decisions were made so future developers understand reasoning; include alternatives considered
+- **Out of scope**: Explicitly listing what won't change prevents scope creep and clarifies boundaries
+
 ## Planning Output
 
 After planning, you should have:
@@ -116,4 +123,4 @@ After planning, you should have:
 5. Testing decisions
 6. Key implementation decisions
 
-See [19-plan-template.md](19-plan-template.md) for documenting the plan.
+Document the plan using the template in [19-plan-template.md](19-plan-template.md).

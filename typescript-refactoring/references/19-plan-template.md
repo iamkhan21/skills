@@ -129,38 +129,4 @@ Extract separate services for each responsibility using the Single Responsibilit
 This refactor should be done incrementally. Each commit should pass all tests. If tests fail, fix before proceeding to next commit. The goal is to have zero downtime and no behavior changes during the refactor.
 ```
 
-## Tips for Good Plans
-
-### Problem Statement
-
-- Describe from developer's perspective
-- Include pain points
-- Explain why current state is problematic
-
-### Commits
-
-- Each commit = one logical change
-- Each commit leaves code working
-- Tests pass after every commit
-- Easy to bisect if issues arise
-
-### Decision Document
-
-- Record WHY decisions were made
-- Future developers can understand reasoning
-- Include alternatives considered
-
-### Out of Scope
-
-- Explicitly list what won't change
-- Prevents scope creep
-- Clarifies boundaries
-
-## Checklist
-
-- [ ] Problem clearly stated
-- [ ] Solution approach explained
-- [ ] Commits are atomic and ordered
-- [ ] Key decisions documented
-- [ ] Testing strategy defined
-- [ ] Scope boundaries clear
+For the planning process that produces this template, see [02-planning-workflow.md](02-planning-workflow.md).

@@ -34,13 +34,15 @@ test("increments count", () => {
 });
 ```
 
-Async updates use `waitFor`:
+Async updates — wrap the assertion in `waitFor`, not `renderHook`:
 
 ```typescript
 test("fetches data", async () => {
-  const { result } = await waitFor(() => renderHook(() => useFetchUser(1)));
-  
-  expect(result.current.user).toEqual({ id: 1, name: "Test" });
+  const { result } = renderHook(() => useFetchUser(1));
+
+  await waitFor(() => {
+    expect(result.current.user).toEqual({ id: 1, name: "Test" });
+  });
 });
 ```
 

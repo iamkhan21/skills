@@ -2,56 +2,44 @@
 
 Quick wins that improve code with minimal risk. Start here before deeper refactoring.
 
-## Code Formatting
+## Code Formatting & Linting
 
-Automate with Prettier or equivalent.
+Use Biome for both formatting and linting in one tool. It's fast (written in Rust) and replaces Prettier + ESLint.
 
 ```bash
 # One-time setup
-npm install --save-dev prettier
+npm install --save-dev --exact @biomejs/biome
+npx @biomejs/biome init
 
-# Format all files
-npx prettier --write .
+# Format and lint all files
+npx @biomejs/biome check --write .
 ```
 
-### Benefits
+Alternatively, use OxLint for linting (fast, zero-config) with a separate formatter:
 
-- Consistent style across codebase
-- Eliminates bike-shedding in PRs
-- Zero cognitive overhead
+```bash
+npx oxlint .
+```
 
 ### Commit Strategy
 
 ```bash
-git commit -m "Apply Prettier formatting"
+git commit -m "style: apply Biome formatting"
 ```
 
 One commit for formatting. Don't mix with other changes.
 
-## Code Linting
+### Incremental Lint Fixing
 
 Fix each lint rule as separate commit.
 
-```jsonc
-// .eslintrc.json
-{
-  "rules": {
-    "no-unused-vars": "error",
-    "prefer-const": "error",
-    "no-console": "warn"
-  }
-}
-```
-
-### Incremental Fixing
-
 ```bash
-# Fix one rule at a time
-eslint --fix --rule 'prefer-const: error' src/
-git commit -m "Fix prefer-const lint rule"
+# Fix one category at a time
+npx @biomejs/biome check --write --only=style src/
+git commit -m "style: fix style lint rules"
 
-eslint --fix --rule 'no-unused-vars: error' src/
-git commit -m "Remove unused variables"
+npx @biomejs/biome check --write --only=correctness src/
+git commit -m "refactor: fix correctness lint rules"
 ```
 
 ### Why Separate Commits?
@@ -163,8 +151,8 @@ Use IDE and tooling capabilities.
 
 ## Checklist
 
-- [ ] Prettier/formatter applied
-- [ ] Lint rules fixed (one per commit)
+- [ ] Biome formatting applied
+- [ ] Lint rules fixed (one category per commit)
 - [ ] Language features adopted
 - [ ] Standard APIs used where appropriate
 - [ ] IDE tooling utilized
