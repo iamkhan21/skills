@@ -29,22 +29,39 @@ describe('UserService', () => {
 })
 ```
 
+## Protect The Behavior Surface First
+
+Before reorganizing tests, make sure they cover the behavior most likely to regress.
+
+- public inputs and outputs
+- important side effects
+- error behavior
+- ordering-sensitive logic
+- legacy quirks that callers may rely on
+
+If tests are missing, add narrow characterization coverage before production refactors.
+
+```ts
+it('keeps the current fallback when the API returns no currency', () => {
+  expect(formatPrice(undefined)).toBe('USD 0.00')
+})
+```
+
+Do not start by rewriting the whole test suite.
+
 ## Test Structure: Arrange-Act-Assert
 
 ```ts
 describe('calculateTotal', () => {
   it('sums item prices multiplied by quantity', () => {
-    // Arrange
     const items: CartItem[] = [
       { price: 10, quantity: 2 },
       { price: 5, quantity: 3 }
     ]
-    
-    // Act
+
     const total = calculateTotal(items)
-    
-    // Assert
-    expect(total).toBe(35) // 10*2 + 5*3 = 35
+
+    expect(total).toBe(35)
   })
 })
 ```
@@ -65,15 +82,15 @@ describe('validateUser', () => {
   it('fails when name is empty', () => {
     expect(validateUser({ name: '', email: 'a@b.com' }).isValid).toBe(false)
   })
-  
+
   it('fails when email is empty', () => {
     expect(validateUser({ name: 'Alice', email: '' }).isValid).toBe(false)
   })
-  
+
   it('fails when email is invalid', () => {
     expect(validateUser({ name: 'Alice', email: 'invalid' }).isValid).toBe(false)
   })
-  
+
   it('passes with valid data', () => {
     expect(validateUser({ name: 'Alice', email: 'a@b.com' }).isValid).toBe(true)
   })
@@ -85,7 +102,6 @@ describe('validateUser', () => {
 Extract test data to keep tests focused.
 
 ```ts
-// fixtures/user.ts
 export function createTestUser(overrides?: Partial<User>): User {
   return {
     id: 'test-user-id',
@@ -96,11 +112,9 @@ export function createTestUser(overrides?: Partial<User>): User {
   }
 }
 
-// Test file
 describe('UserService', () => {
   it('finds user by email', async () => {
     const user = createTestUser({ email: 'specific@test.com' })
-    // ...
   })
 })
 ```
@@ -110,26 +124,6 @@ describe('UserService', () => {
 ### Extract Test Helpers
 
 ```ts
-// Before: Repeated setup
-it('calculates total with discount', () => {
-  const cart = [
-    { price: 100, quantity: 1, discount: 10 },
-    { price: 50, quantity: 2, discount: 5 }
-  ]
-  const total = calculateTotal(cart)
-  expect(total).toBe(185)
-})
-
-it('calculates total without discount', () => {
-  const cart = [
-    { price: 100, quantity: 1 },
-    { price: 50, quantity: 2 }
-  ]
-  const total = calculateTotal(cart)
-  expect(total).toBe(200)
-})
-
-// After: Helper function
 function createCartItem(
   price: number,
   quantity: number,
@@ -143,6 +137,7 @@ it('calculates total with discount', () => {
     createCartItem(100, 1, 10),
     createCartItem(50, 2, 5)
   ]
+
   expect(calculateTotal(cart)).toBe(185)
 })
 ```
@@ -150,16 +145,6 @@ it('calculates total with discount', () => {
 ### Extract Assertions
 
 ```ts
-// Before: Repeated assertions
-it('creates valid user response', async () => {
-  const response = await createUser(userData)
-  expect(response).toHaveProperty('id')
-  expect(response.id).toMatch(/^[a-f0-9-]+$/)
-  expect(response).toHaveProperty('createdAt')
-  expect(response.createdAt).toBeInstanceOf(Date)
-})
-
-// After: Custom matcher or helper
 function expectValidUser(response: unknown) {
   expect(response).toMatchObject({
     id: expect.stringMatching(/^[a-f0-9-]+$/),
@@ -184,12 +169,12 @@ describe('UserService', () => {
     it('rejects duplicate email')
     it('hashes password')
   })
-  
+
   describe('findById', () => {
     it('returns user when found')
     it('returns null when not found')
   })
-  
+
   describe('update', () => {
     it('updates allowed fields')
     it('ignores forbidden fields')
@@ -203,25 +188,14 @@ describe('UserService', () => {
 ### Dependency Injection
 
 ```ts
-// Before: Hard to mock
-class UserService {
-  private db = new Database() // Hard-coded dependency
-  
-  async getUser(id: string) {
-    return this.db.find(id)
-  }
-}
-
-// After: Injectable dependencies
 class UserService {
   constructor(private db: Database) {}
-  
+
   async getUser(id: string) {
     return this.db.find(id)
   }
 }
 
-// Test
 const mockDb = { find: jest.fn() }
 const service = new UserService(mockDb)
 ```
@@ -229,26 +203,23 @@ const service = new UserService(mockDb)
 ### Interface-Based Mocking
 
 ```ts
-// Interface for mocking
 interface UserRepository {
   findById(id: string): Promise<User | null>
   save(user: User): Promise<void>
 }
 
-// Mock implementation
 class MockUserRepository implements UserRepository {
   private users = new Map<string, User>()
-  
+
   async findById(id: string): Promise<User | null> {
     return this.users.get(id) ?? null
   }
-  
+
   async save(user: User): Promise<void> {
     this.users.set(user.id, user)
   }
 }
 
-// Use in tests
 const repo = new MockUserRepository()
 const service = new UserService(repo)
 ```
@@ -256,6 +227,7 @@ const service = new UserService(repo)
 ## Checklist
 
 - [ ] Tests verify behavior, not implementation
+- [ ] The risky behavior surface is covered first
 - [ ] Arrange-Act-Assert structure
 - [ ] One concept per test
 - [ ] Test fixtures for data

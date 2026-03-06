@@ -1,67 +1,91 @@
 # Preparation
 
-Before touching any code, prepare the refactoring ground.
+Before touching code, decide what problem you are actually solving and how you will know you did not break behavior.
 
-## Define Scope and Boundaries
+## Diagnose The Dominant Smell
 
-Identify junction points between code to change and everything else.
+Do not begin with generic cleanup. Name the main pressure first.
 
-```ts
-// Bad: Vague scope "improve user module"
-// Good: Specific boundaries
+- Long function or deep nesting
+- Duplication
+- Mixed responsibilities
+- Side effects tangled with decision logic
+- Complex or misleading types
+- Module-boundary or architecture pressure
+- Legacy code with weak tests or unclear behavior
 
-// Boundary example: User module
-// - IN SCOPE: UserService, UserRepository, User types
-// - OUT OF SCOPE: AuthService, PaymentService, controllers
-// - JUNCTION POINTS: UserService.publicMethods, UserRepository interface
-```
+If the request is vague, translate it into one concrete smell before planning changes.
 
-### How to Find Boundaries
+## Define Scope And Boundaries
 
-1. Identify entry points (public APIs, UI components)
-2. Trace data flow to find dependencies
-3. Mark where changes stop propagating
-4. Document what stays unchanged
-
-## Cover with Tests
-
-Tests provide safety net for refactoring. Without them, you're refactoring blindly.
-
-### Test Coverage Checklist
-
-- [ ] Happy path works
-- [ ] Edge cases covered (empty, null, max values)
-- [ ] Error cases handled
-- [ ] Implicit inputs tested (time, random, global state)
-
-### What to Test Before Refactoring
+Identify junction points between the code you will touch and the rest of the system.
 
 ```ts
-// Explicit inputs
-calculateTotal(items: CartItem[]) // Test various item combinations
+// Bad: vague scope
+// "improve user module"
 
-// Implicit inputs
-getCurrentTime() // Mock Date.now
-generateId() // Mock Math.random or UUID
+// Better: explicit scope and boundaries
+// IN SCOPE: UserService, UserRepository, User types
+// OUT OF SCOPE: AuthService, PaymentService, controllers
+// JUNCTION POINTS: UserService public methods, UserRepository contract
 ```
+
+### Boundary Checklist
+
+1. Identify entry points: public APIs, exported functions, UI surfaces, CLI commands.
+2. Trace important dependencies: data stores, HTTP clients, caches, feature flags.
+3. Mark where behavior must remain stable.
+4. Write down non-goals so the refactor does not turn into a redesign.
+
+## Name The Behavior Surface
+
+Before changing legacy or low-test code, list the behavior you are trying to preserve.
+
+- Inputs and outputs
+- Side effects
+- Ordering and timing expectations
+- Fallback behavior
+- Error cases and messages
+- Weird legacy quirks that may actually matter
+
+This turns "be careful" into concrete checks.
+
+## Choose A Proportional Safety Net
+
+Use the best safety net available instead of assuming ideal tests.
+
+### If Good Tests Exist
+
+- Run them before changing structure.
+- Extend them around the touched boundary if coverage is thin.
+
+### If Tests Are Weak
+
+- Add characterization tests around the public seam.
+- Prefer narrow regression tests over broad test rewrites.
+
+### If Tests Are Missing
+
+- Slow down.
+- Make smaller, reversible steps.
+- Write a short manual verification list for the behavior surface.
+- Treat compiler, type, and lint checks as additional guardrails.
 
 ### Characterization Tests
 
-When no tests exist, write characterization tests that capture current behavior (even if buggy):
+Capture what the code does now, not what you wish it did.
 
 ```ts
-// Capture WHAT the code does, not what it SHOULD do
 it('returns -1 for empty cart (current behavior)', () => {
-  expect(calculateTotal([])).toBe(-1) // Document current quirk
+  expect(calculateTotal([])).toBe(-1)
 })
 ```
 
-## Stricter Linter/Compiler
+## Tighten Mechanical Guardrails
 
-Make the compiler and linter help you find issues.
+Make the compiler and linter help you.
 
 ```jsonc
-// tsconfig.json - enable strict mode
 {
   "compilerOptions": {
     "strict": true,
@@ -72,10 +96,9 @@ Make the compiler and linter help you find issues.
 }
 ```
 
-### Biome (recommended)
+### Biome
 
 ```jsonc
-// biome.json
 {
   "linter": {
     "enabled": true,
@@ -92,23 +115,17 @@ Make the compiler and linter help you find issues.
 }
 ```
 
-### OxLint (alternative)
+### OxLint
 
 ```bash
 npx oxlint .
 ```
 
-### Incremental Strictness
-
-1. Enable one rule at a time
-2. Fix all violations
-3. Commit
-4. Enable next rule
-
 ## Checklist
 
-- [ ] Scope defined with clear boundaries
+- [ ] Dominant smell named
+- [ ] Scope and non-goals written down
 - [ ] Junction points identified
-- [ ] Tests cover main scenarios
-- [ ] Edge cases tested
-- [ ] Linter/compiler stricter settings enabled
+- [ ] Behavior surface listed for risky code
+- [ ] Safety net chosen for current reality
+- [ ] Compiler, type, and lint checks ready

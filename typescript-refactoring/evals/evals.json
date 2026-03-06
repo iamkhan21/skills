@@ -1,0 +1,161 @@
+{
+  "skill_name": "typescript-refactoring",
+  "evals": [
+    {
+      "id": 0,
+      "prompt": "I have a `src/pricing/calculateInvoice.ts` function that's almost 140 lines long with nested `if/else`, repeated subtotal math, and 6 boolean flags controlling discounts. Please refactor it to reduce complexity without changing behavior. Keep the public function name the same and explain your plan before making sweeping changes.",
+      "expected_output": "A small-step refactor that reduces nesting and duplication, preserves the public entry point, and explains how behavior will be kept stable.",
+      "files": [],
+      "assertions": [
+        "Identifies long function / nested conditionals as the primary smell before proposing changes.",
+        "Preserves the existing public entry point instead of replacing it with a new API by default.",
+        "Uses incremental refactoring moves such as guard clauses, helper extraction, or lookup/config extraction rather than a full rewrite.",
+        "Mentions a behavior-preservation strategy such as characterization tests, existing tests, or explicit verification steps.",
+        "Does not mix in feature work or pricing-rule changes not requested by the user."
+      ]
+    },
+    {
+      "id": 1,
+      "prompt": "Can you clean up this React+TypeScript component? `src/features/orders/OrderDetailsPage.tsx` fetches data, transforms it, owns 9 pieces of UI state, and also formats CSV exports. It's painful to test. I do not want a redesign, just a refactor that makes future edits safer.",
+      "expected_output": "A refactor plan and implementation that separates concerns in a React/TS component without drifting into a redesign.",
+      "files": [],
+      "assertions": [
+        "Diagnoses mixed responsibilities rather than treating the issue as only formatting or naming.",
+        "Separates data fetching, state orchestration, and export/business logic with clear boundaries.",
+        "Avoids unnecessary UI redesign or behavior changes when the request is explicitly about safety and maintainability.",
+        "Proposes or applies changes that improve testability, such as isolating side effects or extracting pure helpers.",
+        "Keeps the scope focused on the component and directly related seams rather than broad architecture churn."
+      ]
+    },
+    {
+      "id": 2,
+      "prompt": "`src/services/UserService.ts` talks directly to Postgres, sends emails, records analytics, and builds API DTOs. Please untangle it. We have some tests but coverage is spotty. I care more about reducing coupling than about clever patterns.",
+      "expected_output": "A coupling-reduction refactor that isolates responsibilities and accounts for incomplete test coverage.",
+      "files": [],
+      "assertions": [
+        "Identifies low cohesion / excessive coupling as the dominant problem.",
+        "Uses seams such as interfaces, extracted collaborators, or ports/adapters only where they reduce concrete coupling.",
+        "Provides a fallback safety plan for spotty coverage, such as characterization tests or staged verification.",
+        "Avoids introducing gratuitous abstractions with no immediate use.",
+        "Keeps behavior-preserving refactor work separate from speculative API redesign."
+      ]
+    },
+    {
+      "id": 3,
+      "prompt": "I need help with a type-heavy utility in `src/lib/groupByStatus.ts`. It uses nested generics, `as any`, and a giant conditional return type that nobody on my team understands. Please simplify the types without throwing away useful safety.",
+      "expected_output": "A TypeScript-aware refactor that reduces type complexity and avoids replacing safety with `any` or broad assertions.",
+      "files": [],
+      "assertions": [
+        "Treats type complexity as a design problem, not just a syntax cleanup task.",
+        "Moves away from `any` toward safer constructs such as `unknown`, narrower generics, helper types, or discriminated unions where appropriate.",
+        "Preserves or improves type signal for callers instead of widening everything to get the code compiling.",
+        "Explains the chosen simplification in terms of readability and contract clarity.",
+        "Avoids premature generic abstraction if simpler concrete types solve the problem."
+      ]
+    },
+    {
+      "id": 4,
+      "prompt": "There are three nearly identical mapping functions in `src/api/mappers/`: `toOrderDto`, `toArchivedOrderDto`, and `toOrderSummaryDto`. Please refactor the duplication, but I'm nervous about accidentally merging things that only look similar.",
+      "expected_output": "A duplication refactor that distinguishes true shared logic from coincidental similarity.",
+      "files": [],
+      "assertions": [
+        "Checks whether the duplication is identical, similar, or merely conceptually related before extracting abstractions.",
+        "Keeps differences explicit instead of flattening meaningful domain distinctions.",
+        "Uses a modest extraction or shared helper rather than building a generic mapper framework by default.",
+        "Explains why the selected shared boundary is safe.",
+        "Avoids making the resulting DTO code harder to read than the original."
+      ]
+    },
+    {
+      "id": 5,
+      "prompt": "This one is legacy: `src/legacy/importCustomers.ts` has no tests, lots of date parsing, and weird fallback behavior that might actually be relied on. Please refactor carefully. If you need to slow down and characterize behavior first, do that.",
+      "expected_output": "A cautious refactor plan for low-test legacy code that prioritizes behavior discovery before structural cleanup.",
+      "files": [],
+      "assertions": [
+        "Explicitly recognizes the lack of tests as a constraint that changes the refactoring approach.",
+        "Prioritizes characterization tests or manual verification checkpoints before aggressive structural changes.",
+        "Avoids confidently 'fixing' suspicious legacy behavior unless the user asks for bug fixes.",
+        "Uses narrow seams and reversible steps rather than broad modernization.",
+        "Documents assumptions or risky unknowns instead of pretending the behavior is obvious."
+      ]
+    },
+    {
+      "id": 6,
+      "prompt": "`src/checkout/createOrder.ts` mixes validation, DB writes, Stripe calls, and email sending in one async function. I want it easier to reason about and test, but please don't turn it into architecture astronautics.",
+      "expected_output": "A side-effect isolation refactor that improves reasoning and testability without overengineering.",
+      "files": [],
+      "assertions": [
+        "Identifies side-effect mixing as the main problem.",
+        "Separates pure decision logic from I/O orchestration or otherwise isolates side effects behind clear seams.",
+        "Keeps the design practical and proportional to the code size instead of introducing needless layers.",
+        "Improves test strategy by making business rules testable without Stripe/DB/email dependencies.",
+        "Preserves behavior and call order expectations unless a change is explicitly justified."
+      ]
+    },
+    {
+      "id": 7,
+      "prompt": "Can you help me restructure `src/modules/reporting`? It's not a full rewrite request. The problem is imports point everywhere, responsibilities blur across files, and small changes ripple unexpectedly. I need a plan plus a safe first implementation step.",
+      "expected_output": "A refactoring response that distinguishes planning from execution and starts with a safe architectural seam rather than a rewrite.",
+      "files": [],
+      "assertions": [
+        "Frames the problem as module-boundary / dependency-direction trouble rather than generic messiness.",
+        "Produces a concrete plan with in-scope and out-of-scope boundaries.",
+        "Chooses a safe first move, such as extracting a seam, façade, or dependency boundary, instead of replatforming the module.",
+        "Avoids describing a big-bang migration as the default path.",
+        "Explains why the first step is reversible and useful even if the larger refactor pauses."
+      ]
+    },
+    {
+      "id": 8,
+      "prompt": "I think `src/lib/normalizeAddress.ts` is ugly and confusing. Please make it cleaner. I don't have a specific refactor in mind, but I do not want behavior changes because this feeds shipping labels.",
+      "expected_output": "A disciplined response to a vague cleanup request that still constrains scope and preserves behavior.",
+      "files": [],
+      "assertions": [
+        "Translates the vague request into a concrete target smell before changing code.",
+        "States non-goals or scope boundaries when the user request is underspecified.",
+        "Centers behavior preservation because the function has operational importance.",
+        "Avoids turning a vague request into broad speculative redesign.",
+        "Chooses simple cleanup moves proportional to the evidence in the code."
+      ]
+    },
+    {
+      "id": 9,
+      "prompt": "Please refactor `src/payments/refund.ts` and while you're there also add support for partial refunds with new audit metadata fields.",
+      "expected_output": "A response that cleanly separates refactoring from requested feature work instead of blending them into one undisciplined change.",
+      "files": [],
+      "assertions": [
+        "Recognizes that the request mixes refactoring and feature work.",
+        "Proposes a separation strategy, such as refactor-first then feature, or at minimum distinct phases with explicit boundaries.",
+        "Avoids presenting the combined work as a pure refactor.",
+        "Explains risk reduction benefits of separating structural cleanup from behavior changes.",
+        "Keeps the user's feature request visible rather than rejecting it outright."
+      ]
+    },
+    {
+      "id": 10,
+      "prompt": "`src/ui/buildTableRows.ts` is a pile of loops and temporary arrays. I suspect it wants a cleaner data pipeline, but readability matters more to me than being 'functional'. Refactor it if that instinct is right, otherwise choose something else.",
+      "expected_output": "A refactor that uses declarative/data-pipeline techniques only if they genuinely improve readability.",
+      "files": [],
+      "assertions": [
+        "Evaluates whether a pipeline-style refactor actually improves readability for this case.",
+        "Avoids forcing `map/filter/reduce` chains when a simpler loop or helper extraction is clearer.",
+        "Explains the readability tradeoff behind the chosen approach.",
+        "Reduces temporary-state noise or duplicated transformation logic.",
+        "Preserves the output contract of the table row builder."
+      ]
+    },
+    {
+      "id": 11,
+      "prompt": "I keep tripping over inconsistent names in `src/auth/session/`. Some functions named `get*` can return undefined, some `load*` functions mutate caches, and the booleans are all over the place (`valid`, `isReady`, `hasSession`, `sessionExists`). Please refactor naming without accidentally changing behavior.",
+      "expected_output": "A naming-focused refactor that treats naming as a design signal and does not blur behavioral semantics.",
+      "files": [],
+      "assertions": [
+        "Identifies inaccurate and inconsistent naming as the smell, not just superficial style drift.",
+        "Uses naming changes to clarify semantics such as `get` vs `find` and boolean conventions like `is/has/can/should`.",
+        "Avoids mixing large structural rewrites into a naming-focused task unless needed to resolve responsibility confusion.",
+        "Preserves behavior while making mutation/query distinctions clearer.",
+        "Notes when bad names may indicate mixed responsibilities that deserve a follow-up refactor."
+      ]
+    }
+  ]
+}

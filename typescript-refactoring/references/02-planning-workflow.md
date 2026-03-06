@@ -1,126 +1,125 @@
 # Planning Workflow
 
-Detailed process for planning a refactoring effort.
+Use this workflow when the refactor is large enough to benefit from an explicit plan.
 
-## Step 1: Gather Problem Description
+## Step 1: Translate The Request Into A Refactor Problem
 
-Ask user for:
+Start by naming the actual problem in code terms.
 
-- Long, detailed description of the problem
-- Pain points they're experiencing
-- Any potential solution ideas
+- What is painful right now?
+- What smell is dominant?
+- What should stay behaviorally stable?
+- Is this really a refactor, or is feature work mixed in?
 
-Example prompts:
-- "What problem are you trying to solve?"
-- "What's frustrating about the current code?"
-- "What would ideal look like?"
+Examples:
 
-## Step 2: Explore Codebase
+- "clean this up" -> long function with mixed responsibilities
+- "make this easier to test" -> side effects block isolated tests
+- "split this component" -> file is doing too much, not necessarily a design-system rewrite
 
-Verify user's assertions and understand current state:
+## Step 2: Verify In Code
 
-- Read relevant files
-- Trace dependencies
-- Identify coupling points
-- Find existing patterns in codebase
+Do not trust the first narrative blindly.
 
-Don't assume - verify with code.
+- Read the relevant files
+- Trace imports and dependencies
+- Identify entry points and public contracts
+- Look for existing patterns worth matching
+- Confirm whether the suspected smell is real
 
-## Step 3: Consider Options
+## Step 3: Choose The Safest Useful Direction
 
-Ask whether they considered alternatives. Present options:
+Prefer a small first move over a grand design.
 
-```ts
-// Option A: Extract to separate service
-// Option B: Use composition pattern
-// Option C: Introduce adapter layer
-```
+Common choices:
 
-Trade-offs for each option should be discussed.
+- Extract a pure helper
+- Add guard clauses
+- Isolate side effects behind a seam
+- Rename to reveal responsibility
+- Split one module boundary
+- Add characterization tests first
 
-## Step 4: Interview About Implementation
+If more than one approach is plausible, compare them in terms of risk, payoff, and reversibility.
 
-Be extremely detailed and thorough:
+## Step 4: Define Scope And Non-Goals
 
-- What modules will be affected?
-- What interfaces will change?
-- What's the data flow?
-- What external dependencies exist?
-- What's the rollback plan?
-
-## Step 5: Define Exact Scope
-
-Work out what will change and what won't:
+Write down exactly what changes and what does not.
 
 ### In Scope
 
-- List specific modules, functions, files
-- Define interface changes
-- Identify test updates needed
+- Specific files, modules, or functions
+- The boundary being preserved or adjusted
+- Tests or verification that must be updated
 
-### Out of Scope
+### Out Of Scope
 
-- Explicitly list what won't change
-- Document related but deferred items
-- Note dependencies that stay unchanged
+- Related cleanup that can wait
+- Product behavior changes
+- Architectural redesign beyond the first seam
 
-## Step 6: Check Test Coverage
+For vague requests, keep this section especially tight.
 
-Look for test coverage of affected areas:
+## Step 5: Decide The Safety Net
 
-- [ ] Unit tests exist for core logic
-- [ ] Integration tests cover module boundaries
-- [ ] Edge cases tested
+Choose a safety net that matches reality.
 
-If insufficient coverage:
+- Good tests: run and extend targeted tests.
+- Weak tests: add characterization coverage at the boundary.
+- No tests: define manual verification plus compiler, type, and lint checks.
 
-1. Ask user about testing plans
-2. Recommend adding characterization tests first
-3. Consider test-first refactoring approach
+For legacy code, list the behavior surface explicitly: inputs, outputs, side effects, ordering, fallbacks, and errors.
 
-## Step 7: Break Into Tiny Commits
+## Step 6: Break The Work Into Small Transformations
 
-Martin Fowler's advice: "Make each refactoring step as small as possible, so that you can always see the program working."
-
-### Commit Planning Example
+Plan a sequence of reversible moves.
 
 ```markdown
-## Commits
+## Phases
 
-1. Add characterization tests for UserService
-2. Extract validateEmail to separate function
-3. Move validateEmail to validation module
-4. Add stricter types to UserService
-5. Extract UserRepository interface
-6. Implement UserRepository with current logic
-7. Inject UserRepository into UserService
-8. Add in-memory UserRepository for tests
-9. Remove direct database calls from UserService
+1. Add characterization tests for UserService behavior surface
+2. Extract `validateEmail` as a local pure helper
+3. Replace inline validation with helper calls
+4. Move helper to validation module if duplication still exists
+5. Introduce `UserRepository` seam around direct database access
+6. Update tests around the new seam
 ```
 
-Each commit:
+Each step should:
 
-- Leaves codebase in working state
-- Tests pass
-- One logical change
-- Easy to revert if needed
+- Leave the codebase working
+- Preserve behavior
+- Be reviewable on its own
+- Avoid mixing unrelated techniques unless there is a strong reason
+
+## Step 7: Package Mixed Requests Honestly
+
+If the user asked for a refactor plus a new feature or bug fix:
+
+- separate the structural work from the behavior change
+- prefer refactor first, then feature
+- if they must land together, describe them as distinct phases or review sections
+- keep phase one small and local
+
+Do not frame combined work as a pure refactor.
 
 ## Planning Quality Checks
 
-- **Problem statement**: Describe from the developer's perspective, include pain points, explain why current state is problematic
-- **Commits**: Each commit = one logical change, leaves code working, tests pass, easy to bisect
-- **Decision document**: Record WHY decisions were made so future developers understand reasoning; include alternatives considered
-- **Out of scope**: Explicitly listing what won't change prevents scope creep and clarifies boundaries
+- **Problem fit**: names the dominant smell, not just a generic desire to clean up
+- **Scope control**: preserves boundaries and lists non-goals
+- **Safety**: uses a realistic safety net for the test situation
+- **Proportionality**: first move is small, local, and reversible
+- **Honesty**: separates refactor work from feature work
 
 ## Planning Output
 
 After planning, you should have:
 
-1. Problem statement
-2. Proposed solution
-3. List of tiny commits
-4. Scope boundaries (in/out)
-5. Testing decisions
-6. Key implementation decisions
+1. Dominant smell or pain point
+2. Scope and non-goals
+3. Chosen first move and why
+4. Safety net and verification plan
+5. Sequence of small transformations or phases
+6. Assumptions, unknowns, and deferred work
 
-Document the plan using the template in [19-plan-template.md](19-plan-template.md).
+Document the plan with [19-plan-template.md](19-plan-template.md).

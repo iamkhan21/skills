@@ -1,171 +1,132 @@
 # Process Heuristics
 
-Guidelines for the refactoring process itself.
+Use these heuristics while refactoring, not just when planning it.
 
-## Small Steps
+## Prefer Small, Reversible Moves
 
-Each step should be atomic and verifiable.
+Each step should be easy to review and easy to back out.
 
 ```bash
-# Bad: One giant commit
+# Too big
 git commit -m "refactor: rewrite user module"
 
-# Good: Series of small commits
-git commit -m "refactor: extract validateEmail function"
-git commit -m "refactor: move validateEmail to validation module"
-git commit -m "test: add unit tests for validateEmail"
-git commit -m "refactor: replace inline validation with validateEmail call"
+# Better
+git commit -m "refactor: extract validateEmail helper"
+git commit -m "refactor: replace inline validation with helper"
+git commit -m "test: add characterization coverage for validation"
 ```
 
-### Why Small Steps?
+Small steps make it easier to spot regressions, understand intent, and stop early when the main pain point is gone.
 
-- Easy to identify where bug was introduced
-- Simple to revert if needed
-- Clear git history
-- Forces clear thinking
+## One Conceptual Transformation At A Time
 
-## One Technique at a Time
+Do not mix unrelated refactor moves unless keeping them together clearly lowers risk.
 
-Don't mix refactoring techniques in one commit.
+- rename or repartition
+- extract logic or change types
+- isolate side effects or redesign a boundary
+
+The goal is not perfect purity. The goal is understandable progress.
+
+## Keep Behavior Stable
+
+During refactoring, avoid quietly changing product behavior.
+
+- No feature additions unless the user asked for them
+- No bug fixes hidden inside cleanup
+- No changed return contracts, ordering, or error behavior unless called out
+
+If you find a real bug, note it and fix it separately unless the user asked for both.
+
+## Verify After Meaningful Steps
+
+After each meaningful change:
+
+1. Run the most relevant checks.
+2. Compare against the preserved behavior surface.
+3. Stop and investigate if anything unexpected changes.
 
 ```bash
-# Bad: Mixing techniques
-git commit -m "refactor: rename user to account and extract validation"
-
-# Good: Separate commits
-git commit -m "refactor: rename user to account"
-git commit -m "refactor: extract validation logic"
-```
-
-## No Features, No Bug Fixes
-
-Refactoring should not change behavior.
-
-```ts
-// During refactoring, DON'T:
-// - Add new features
-// - Fix bugs (even obvious ones)
-// - Change return values
-// - Modify error messages
-
-// DO:
-// - Keep exact same behavior
-// - Improve code structure only
-// - Fix bugs in separate commit/PR
-```
-
-### Why Separate?
-
-- Easier code review
-- Clear git blame
-- Isolates risk
-- Cleaner history
-
-## Test Every Change
-
-After each refactoring step:
-
-1. Run relevant tests
-2. Verify behavior unchanged
-3. Commit if green
-
-```bash
-# After each small change
 npm test -- --related
-
-# Quick sanity check
+npm run typecheck
 npm run build
 ```
 
-## Transformation Priority Premise (TPP)
+If automated tests are weak, keep a short manual verification list and reuse it after each risky step.
 
-When refactoring, prefer simpler transformations:
+## Keep Test Refactors Separate When Practical
 
-1. **{} → nil** - Add null/undefined handling
-2. **nil → constant** - Replace null with value
-3. **constant → constant+** - Make constant more complex
-4. **constant → scalar** - Replace constant with variable
-5. **statement → statements** - Add statements
-6. **unconditional → if** - Split execution path
-7. **scalar → array** - Handle multiple items
-8. **array → container** - Use collection abstraction
-9. **statement → recursion** - Replace iteration
-10. **if → while** - Repeat conditionally
-11. **expression → function** - Extract computation
-12. **variable → assignment** - Replace constant with variable
+Prefer this order:
 
-Apply transformations in order of priority (simpler first).
+1. Add or adjust tests that protect behavior.
+2. Refactor production code.
+3. Clean up test structure if it still needs work.
 
-## Refactor Tests Separately
+Mixing all three at once makes review harder.
 
-Don't mix test refactoring with production code refactoring.
+## Stay Local Before Going Architectural
 
-```bash
-# Commit 1: Refactor production code
-git commit -m "refactor: extract UserService from UserController"
+Start with the smallest seam that buys safety.
 
-# Commit 2: Refactor tests
-git commit -m "test: update tests to use UserService directly"
+- local helper before shared utility
+- explicit parameter before new service layer
+- one extracted boundary before full module redesign
 
-# Commit 3: Improve test structure
-git commit -m "test: extract test fixtures for user tests"
-```
+If the first useful step is already architectural, explain why a local move is not enough.
 
-## When to Stop
+## Mixed Refactor + Feature Work
 
-Refactoring can become an end in itself. Stop when:
+If the task includes both cleanup and new behavior:
 
-- **Original pain point is resolved** — the problem that motivated the refactor is fixed
-- **Scope boundary is reached** — you defined what's in/out at the start; respect it
-- **Diminishing returns** — each subsequent change improves less than the last
-- **Risk exceeds benefit** — further changes risk introducing behavior changes
-- **You're gold-plating** — making code "perfect" beyond what the team needs
+- package them as separate phases, commits, or review sections
+- keep the first phase structural and local
+- avoid speculative target architecture language unless it is necessary
 
-If you discover new issues during refactoring, document them as separate tasks rather than expanding scope. A completed refactor that solves the original problem is better than an ambitious one that never lands.
+Combined work can be valid. Just do not disguise it as a pure refactor.
 
-## Feature Flags for Safe Rollout
+## When To Stop
 
-For refactors that touch production behavior boundaries (even when behavior shouldn't change), consider feature flags to deploy intermediate states safely:
+Stop when:
 
-```ts
-// Gradually roll out the new code path
-if (featureFlags.isEnabled('new-user-service')) {
-  return newUserService.getUser(id)
-}
-return legacyUserService.getUser(id)
-```
+- the original pain point is materially reduced
+- the next step would mostly be polish
+- risk starts rising faster than payoff
+- you are about to broaden scope without a clear reason
 
-This lets you ship refactoring work incrementally and roll back instantly if something breaks. Remove the flag once the new path is proven stable.
+New problems discovered during refactoring usually belong in follow-up work, not in the current change.
 
-## Pull Request Guidelines
+## Rollout Tactics For Risky Boundaries
 
-Small but detailed PRs:
+For refactors near production-critical seams, use temporary safety mechanisms when justified.
 
-- Title: Clear, specific change
-- Description: Why + what + how
-- Commits: Logical, atomic steps
-- Tests: Prove it works
+- feature flag
+- adapter or facade that preserves the old contract
+- dual-read or compare mode for critical migrations
 
-### PR Template
+Only add these when rollout risk warrants the extra complexity.
+
+## Pull Request Guidance
+
+Good refactor PRs are small enough to review and explicit about safety.
 
 ```markdown
 ## Why
-[Problem being solved]
+[dominant smell and why it hurts]
 
-## What
-[Changes made]
+## Scope
+[what changed and what did not]
 
 ## How
-[Key technical decisions]
+[first move, sequence, and key decisions]
 
-## Testing
-[How to verify]
+## Verification
+[tests, manual checks, or both]
 ```
 
 ## Checklist
 
-- [ ] Each commit is atomic
-- [ ] One technique per commit
-- [ ] No feature changes mixed in
-- [ ] Tests pass after each commit
-- [ ] PR description explains rationale
+- [ ] The main smell stayed in focus
+- [ ] Each step is understandable and reversible
+- [ ] Feature work is separate or clearly labeled
+- [ ] Verification matches the actual risk level
+- [ ] The refactor stopped once the main pain point was addressed
