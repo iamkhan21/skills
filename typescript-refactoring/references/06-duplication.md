@@ -100,14 +100,21 @@ function calculateTotal(items: CartItem[]) {
 
 // After
 function calculateTotal(items: CartItem[]) {
-  return items.reduce((sum, item) => sum + calculateItemTotal(item), 0)
+  let total = 0
+  for (const item of items) {
+    total = addItemToTotal(total, item)
+  }
+  return total
 }
 
-function calculateItemTotal(item: CartItem): number {
-  const base = item.price * item.quantity
-  return item.discount ? base - item.discount : base
+function addItemToTotal(total: number, item: CartItem): number {
+  total += item.price * item.quantity
+  if (item.discount) total -= item.discount
+  return total
 }
 ```
+
+Preserve arithmetic grouping: `(total + base) - discount` can differ from `total + (base - discount)` for floating-point numbers. Extraction is optional if the original loop is already clearer.
 
 ### Extract Method (OOP)
 
@@ -155,6 +162,7 @@ export function validateUsername(name: string) { ... }
 
 // user.ts
 import { validateEmail, validatePassword, validateUsername } from './validation'
+export { validateEmail, validatePassword, validateUsername } from './validation'
 export function createUser(data: UserData) { ... }
 export function updateUser(user: User, data: UserData) { ... }
 ```
@@ -195,7 +203,7 @@ function calculateDeliveryFee(weight: number): number {
 
 ### Rule of Three
 
-Wait for 3 instances before abstracting:
+Repeated examples can reveal a shared responsibility, but three is a heuristic, not a threshold. Extract earlier when a real invariant needs one owner; keep duplication when similar code changes independently.
 
 ```ts
 // Instance 1: Just write it
@@ -216,4 +224,4 @@ function sendTemplatedEmail(user: User, template: EmailTemplate) { ... }
 - [ ] Identified type of duplication (identical/similar/conceptual)
 - [ ] Considered extraction level (function/method/module)
 - [ ] Verified same rate of change
-- [ ] Applied rule of three before abstracting
+- [ ] Extraction justified by shared semantics, not an occurrence count

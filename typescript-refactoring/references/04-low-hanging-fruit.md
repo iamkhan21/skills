@@ -1,66 +1,27 @@
 # Low-Hanging Fruit
 
-Quick wins that improve code with minimal risk. Start here before deeper refactoring.
+Use local mechanical improvements when they solve the actual problem. Newer syntax is not automatically clearer or behavior-preserving.
 
 ## Code Formatting & Linting
 
-Use Biome for both formatting and linting in one tool. It's fast (written in Rust) and replaces Prettier + ESLint.
-
-```bash
-# One-time setup
-npm install --save-dev --exact @biomejs/biome
-npx @biomejs/biome init
-
-# Format and lint all files
-npx @biomejs/biome check --write .
-```
-
-Alternatively, use OxLint for linting (fast, zero-config) with a separate formatter:
-
-```bash
-npx oxlint .
-```
-
-### Commit Strategy
-
-```bash
-git commit -m "style: apply Biome formatting"
-```
-
-One commit for formatting. Don't mix with other changes.
-
-### Incremental Lint Fixing
-
-Fix each lint rule as separate commit.
-
-```bash
-# Fix one category at a time
-npx @biomejs/biome check --write --only=style src/
-git commit -m "style: fix style lint rules"
-
-npx @biomejs/biome check --write --only=correctness src/
-git commit -m "refactor: fix correctness lint rules"
-```
-
-### Why Separate Commits?
-
-- Easier to review
-- Clear what changed
-- Simple to revert if needed
+- Use the repo's installed formatter, linter, and scripts; do not install a preferred replacement during a refactor.
+- Limit automatic fixes to relevant files and inspect the diff. A correctness fix can change behavior.
+- Keep broad formatting separate from structural work when it would obscure review.
+- Create commits only when authorized; one commit per lint rule is not required.
 
 ## Language Features
 
-Replace self-written code with native language features.
+Prefer native features when their semantics and runtime support match the existing contract.
 
 ### Examples (JavaScript/TypeScript)
 
 ```ts
-// Before: Manual object merging
+// Before: Plain data records, own enumerable string properties, no '__proto__' key
 const merged = {}
-for (const key in defaults) {
+for (const key of Object.keys(defaults)) {
   merged[key] = defaults[key]
 }
-for (const key in options) {
+for (const key of Object.keys(options)) {
   merged[key] = options[key]
 }
 
@@ -69,7 +30,7 @@ const merged = { ...defaults, ...options }
 ```
 
 ```ts
-// Before: Manual array flattening
+// Before: Dense arrays (no holes)
 const flattened = []
 for (const arr of arrays) {
   for (const item of arr) {
@@ -82,10 +43,10 @@ const flattened = arrays.flat()
 ```
 
 ```ts
-// Before: Manual null checking
-if (user && user.profile && user.profile.avatar) {
-  return user.profile.avatar.url
-}
+// Before: Nullish checks, no truthiness-based fallback
+return user == null || user.profile == null || user.profile.avatar == null
+  ? undefined
+  : user.profile.avatar.url
 
 // After: Optional chaining
 return user?.profile?.avatar?.url
@@ -95,38 +56,47 @@ return user?.profile?.avatar?.url
 // Before: Manual default value
 const name = user && user.name ? user.name : 'Anonymous'
 
-// After: Nullish coalescing
-const name = user?.name ?? 'Anonymous'
+// After: Preserve the original fallback for an empty name
+const name = user?.name || 'Anonymous'
 ```
+
+Check edge cases before replacing syntax:
+
+| Change | Potential behavior difference |
+|--------|-------------------------------|
+| `||` → `??` | Empty strings, `0`, `false`, and `NaN` stop taking the fallback |
+| Assignment → object spread | Inherited properties, symbols, accessors, and `__proto__` handling can differ |
+| Nested loops → `flat()` | Sparse array holes may be removed instead of becoming `undefined` |
+| Truthy guards → optional chaining | `?.` stops only on `null` / `undefined`, not other falsy values |
+| Mutating → copying | Caller-visible identity, aliases, and mutation contracts change |
 
 ## Standard API Features
 
 Use built-in APIs instead of custom implementations.
 
 ```ts
-// Before: Custom FormData
+// Use built-in FormData when its encoding matches the request contract
 const formData = new FormData()
 formData.append('name', name)
 formData.append('email', email)
 
-// Built-in FormData is already there
-
-// Before: Custom URL parsing
-const params = url.split('?')[1].split('&').map(p => p.split('='))
-
-// After: URLSearchParams
-const params = new URLSearchParams(url.split('?')[1])
+// Parse a URL with an explicit base when relative URLs are allowed
+const params = new URL(url, baseUrl).searchParams
 ```
 
+`URLSearchParams` decodes escapes and treats `+` as a space; its representation is not a drop-in replacement for a raw array of string pairs. Check duplicate keys, malformed input, and encoding expectations.
+
 ```ts
-// Before: Custom deep clone
+// JSON-based clone: existing behavior may be intentional
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj))
 }
 
-// After: structuredClone (modern environments)
+// Alternative, NOT an equivalent refactor
 const cloned = structuredClone(obj)
 ```
+
+`structuredClone` preserves values JSON loses (such as `Date` and `undefined`) and rejects some values, including functions. JSON serialization may call `toJSON`. Treat a switch as a contract change unless the supported data shapes make them equivalent.
 
 ## Environment Features
 
@@ -136,7 +106,7 @@ Use IDE and tooling capabilities.
 
 - Renames all occurrences
 - Handles imports/exports
-- Safe, automated
+- Review references and public/string-based names; symbol renaming cannot update every external consumer automatically
 
 ### Extract Function/Variable
 
@@ -151,8 +121,7 @@ Use IDE and tooling capabilities.
 
 ## Checklist
 
-- [ ] Biome formatting applied
-- [ ] Lint rules fixed (one category per commit)
-- [ ] Language features adopted
-- [ ] Standard APIs used where appropriate
-- [ ] IDE tooling utilized
+- [ ] Existing tools reused; unrelated formatting avoided
+- [ ] Automatic fixes reviewed for semantic changes
+- [ ] Falsy/nullish values, sparse data, errors, identity, and mutation checked where relevant
+- [ ] Runtime support and public consumers verified

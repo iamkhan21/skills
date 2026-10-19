@@ -78,7 +78,7 @@ setTimeout(callback, TWENTY_FOUR_HOURS_MS)
 await delay(Math.pow(2, retryCount) * 1000)
 
 // Good: Explains non-obvious decision
-// Using Map instead of Object because we need to preserve insertion order
+// Map keeps insertion order even for integer-like keys and accepts arbitrary keys
 const users = new Map<string, User>()
 ```
 
@@ -86,8 +86,9 @@ const users = new Map<string, User>()
 
 ```ts
 // Good: Documents workaround for external issue
-// Workaround: API returns 500 for empty results, treat as empty array
-if (response.status === 500) {
+// Workaround for this endpoint's documented EMPTY_RESULT error (link issue here).
+// Preserve other 500 failures instead of disguising outages as empty data.
+if (response.status === 500 && isKnownEmptyResultError(response)) {
   return []
 }
 ```
@@ -99,8 +100,7 @@ if (response.status === 500) {
 // See: https://stripe.com/docs/api/rate_limits
 const MAX_RETRIES = 5
 
-// Good: References specification
-// RFC 5322 email format: https://www.rfc-editor.org/rfc/rfc5322
+// Deliberately limited format heuristic, not an RFC 5322 validator
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 ```
 
@@ -133,17 +133,17 @@ if (user.isPremium && total > 50) {
 // This is a bit messy but it works
 const x = data?.items?.filter?.(i => i?.active)?.map?.(i => i?.value)
 
-// Good: Fix the code
+// Better names, preserving optional calls and the existing undefined fallback
 const activeValues = data?.items
-  ?.filter(item => item?.active)
-  ?.map(item => item?.value) ?? []
+  ?.filter?.(item => item?.active)
+  ?.map?.(item => item?.value)
 ```
 
 ## JSDoc for Public APIs
 
 Use JSDoc for libraries and public interfaces.
 
-```ts
+````ts
 /**
  * Calculates the total price of items in a cart.
  * 
@@ -166,7 +166,7 @@ function calculateTotal(
 ): number {
   // ...
 }
-```
+````
 
 ### JSDoc for Types
 
@@ -189,7 +189,7 @@ interface User {
 
 Keep README focused on getting started.
 
-```markdown
+````markdown
 # Project Name
 
 Brief description of what this project does.
@@ -214,7 +214,7 @@ Basic usage example.
 ## API
 
 Brief API documentation with examples.
-```
+````
 
 ## Update Docs When Code Changes
 
@@ -226,8 +226,8 @@ function getUsers(): User[] {
 }
 
 // Good: Remove comment, or update it
-function getUsers(options?: { limit?: number }): User[] {
-  return userRepo.findAll(options?.limit ?? 10)
+function getUsers(): User[] {
+  return userRepo.findAll()
 }
 ```
 

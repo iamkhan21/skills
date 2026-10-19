@@ -1,81 +1,28 @@
-# Design Patterns for Testable React
+# Design Choices for Testable React
 
-- [Deep Modules](#deep-modules)
-- [Dependency Injection](#dependency-injection)
-- [Return via Callbacks/Output](#return-via-callbacksoutput)
-- [Keep Props Small](#keep-props-small)
-- [Value Objects](#value-objects)
+Use these options only when a test exposes a genuine design problem. Writing tests does not require introducing hooks, adapters, or value objects.
 
 ## Deep Modules
 
-Hide complex implementation behind simple interfaces:
-
-```typescript
-// BAD: Shallow module with leaky surface
-function Form() {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  // ...20 more lines of logic
-}
-
-// GOOD: Deep module with simple interface
-function Form({ onSubmit }: { onSubmit: (data: FormData) => Promise<void> }) {
-  const { values, errors, isSubmitting, handleSubmit } = useFormSubmit(onSubmit);
-  // Complex logic hidden in hook
-}
-```
-
-Tests interact with simple props/callbacks, not internal complexity.
+- Test through a small public interface: DOM behavior, props, and callbacks.
+- Local state is not a design flaw. Extract a hook when it clarifies responsibilities or enables reuse, not merely to hide lines.
+- Test a component-local hook through its component unless the hook has an independent public contract.
 
 ## Dependency Injection
 
-Accept dependencies via props or context:
-
-```tsx
-// BAD: Creates dependency inside
-function UserProfile() {
-  const user = useFetch("/api/user"); // Hard to mock
-}
-
-// GOOD: Accepts dependency
-function UserProfile({ fetchUser }: { fetchUser: () => Promise<User> }) {
-  const user = useQuery(["user"], fetchUser);
-}
-
-// Test
-render(<UserProfile fetchUser={() => Promise.resolve(mockUser)} />);
-```
+- Prefer the app's existing network boundary and providers. A component that fetches internally can often be tested with MSW without changing its props.
+- Accept a dependency through props, context, or an adapter when it represents a useful production boundary.
+- Do not create test-only dependency plumbing throughout the component tree.
 
 ## Return via Callbacks/Output
 
-Prefer observable output over hidden side effects:
-
-```tsx
-// BAD: Mutates global singleton
-function login(credentials) {
-  authService.login(credentials);
-  currentUser = authService.user; // Global mutation
-}
-
-// GOOD: Emits via callback
-function LoginForm({ onLogin }: { onLogin: (user: User) => void }) {
-  const handleSubmit = async (creds) => {
-    const user = await login(creds);
-    onLogin(user);
-  };
-}
-
-// Test
-const onLogin = jest.fn();
-render(<LoginForm onLogin={onLogin} />);
-// Assert onLogin was called with expected user
-```
+- Assert visible output or existing public callbacks.
+- A callback can make ownership explicit, but adding one changes the API; do not redesign an established auth/store flow solely to make a mock assertion easier.
+- Fresh stores and controlled providers often make shared-state behavior testable without changing production contracts.
 
 ## Keep Props Small
 
-Fewer props = fewer test scenarios:
+Use types to make impossible combinations unrepresentable where that reflects real product constraints:
 
 ```tsx
 // BAD: Many props, many combinations
@@ -93,15 +40,8 @@ Fewer props = fewer test scenarios:
 <Button state="loading" variant="primary" />
 ```
 
+Do not collapse independent states just to reduce test count. An error and a disabled state may legitimately coexist.
+
 ## Value Objects
 
-Use domain types to simplify test setup:
-
-```typescript
-// Instead of primitives everywhere
-expect(charge.amount).toBe(9999);
-expect(charge.currency).toBe("USD");
-
-// Use value object
-expect(charge.amount).toEqual(Money.fromDollars(99.99, "USD"));
-```
+Reuse domain types already present in the app. Introduce a value object only when it enforces useful invariants, not to shorten assertions. Plain fixtures are often sufficient.

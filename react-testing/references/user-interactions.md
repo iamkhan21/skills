@@ -9,7 +9,7 @@
 
 ## Setup
 
-Always create a user instance:
+Create a fresh user instance per test, before rendering:
 
 ```typescript
 const user = userEvent.setup();
@@ -18,9 +18,11 @@ const user = userEvent.setup();
 Or with options:
 
 ```typescript
+import userEvent, { PointerEventsCheckLevel } from "@testing-library/user-event";
+
 const user = userEvent.setup({
   delay: 50, // Simulate typing delay (ms)
-  pointerEventsCheck: PointerEventsCheckLevel.Strict,
+  pointerEventsCheck: PointerEventsCheckLevel.EachApiCall,
 });
 ```
 
@@ -82,7 +84,7 @@ await user.pointer([
   { keys: "[/MouseLeft]" }, // Release
 ]);
 
-// Drag and drop
+// Pointer drag sequence (does not model layout or native HTML drag-and-drop)
 await user.pointer([
   { target: screen.getByText(/drag me/i) },
   { keys: "[MouseLeft>]" },
@@ -94,12 +96,16 @@ await user.pointer([
 ## Clipboard
 
 ```typescript
-// Write to clipboard
-await user.clipboard("copied text");
+// Paste into the focused input
+await user.click(screen.getByRole("textbox", { name: /message/i }));
+await user.paste("copied text");
 
-// Read from clipboard (requires permissions)
+// Copy the selected text; setup() provides a clipboard stub
+await user.copy();
 const text = await navigator.clipboard.readText();
 ```
+
+Use `user.cut()` for cutting a selection. Browser permission behavior needs a real-browser test, not the clipboard stub.
 
 ## userEvent vs fireEvent
 

@@ -9,14 +9,14 @@
 
 ## Query Types
 
-| Type | Throws on 0 | Throws on 1+ | Use Case |
-|------|-------------|--------------|----------|
-| `getBy*` | Error | No | Assert element exists |
-| `getAllBy*` | Error | Error | Assert multiple elements |
-| `queryBy*` | No (null) | No | Assert element doesn't exist |
-| `queryAllBy*` | No ([]) | No | Assert no elements match |
-| `findBy*` | Error (async) | No | Wait for async element |
-| `findAllBy*` | Error (async) | Error | Wait for multiple async |
+| Type | No matches | One match | Multiple matches | Use case |
+|------|------------|-----------|------------------|----------|
+| `getBy*` | Throws | Element | Throws | Element exists now |
+| `getAllBy*` | Throws | Array | Array | One or more exist now |
+| `queryBy*` | `null` | Element | Throws | Assert absence |
+| `queryAllBy*` | `[]` | Array | Array | Assert a collection or absence |
+| `findBy*` | Rejects after timeout | Resolves element | Rejects if ambiguity persists | Await an element |
+| `findAllBy*` | Rejects after timeout | Resolves array | Resolves array | Await one or more elements |
 
 ## Query Priority (Most to Least Preferred)
 
@@ -45,14 +45,14 @@ screen.getByLabelText(/remember me/i)
 screen.getByLabelText(/^password$/i)
 ```
 
-### 3. By Placeholder
+### Fallback: By Placeholder
 
 ```typescript
 screen.getByPlaceholderText("Enter your email")
 screen.getByPlaceholderText(/search/i)
 ```
 
-### 4. By Text Content
+### 3. By Text Content
 
 ```typescript
 screen.getByText(/loading/i)
@@ -60,26 +60,26 @@ screen.getByText("Submit")
 screen.getByText((content, element) => element.tagName === "SPAN" && content.includes("Total"))
 ```
 
-### 5. By Display Value (form elements)
+### 4. By Display Value (form elements)
 
 ```typescript
 screen.getByDisplayValue("user@example.com")
 screen.getByDisplayValue(/selected/i)
 ```
 
-### 6. By Alt Text (images)
+### 5. By Alt Text (images)
 
 ```typescript
 screen.getByAltText(/profile picture/i)
 ```
 
-### 7. By Title
+### Fallback: By Title
 
 ```typescript
 screen.getByTitle(/close/i)
 ```
 
-### 8. By Test ID (last resort)
+### Last Resort: By Test ID
 
 ```typescript
 screen.getByTestId("submit-button")
@@ -91,7 +91,8 @@ screen.getByTestId(/^user-card-/)
 Scope queries to a container:
 
 ```typescript
-const form = within(screen.getByRole("form"));
+// A form needs an accessible name to expose the form landmark role.
+const form = within(screen.getByRole("form", { name: /sign in/i }));
 form.getByRole("button", { name: /submit/i });
 
 const dialog = within(screen.getByRole("dialog"));
@@ -102,7 +103,7 @@ expect(dialog.getByText(/confirm/i)).toBeInTheDocument();
 
 ```typescript
 screen.debug()                          // Print entire DOM
-screen.debug(screen.getByRole("form"))  // Print specific element
+screen.debug(screen.getByRole("form", { name: /sign in/i }))
 screen.logTestingPlaygroundURL()        // Generate playground link
 ```
 
@@ -124,8 +125,8 @@ await waitFor(() => {
 ## Common Mistakes
 
 ```typescript
-// WRONG: Using queryBy when element should exist
-expect(screen.queryByRole("button")).toBeInTheDocument() // Silent failure if null
+// Less helpful diagnostics: this assertion still fails when null
+expect(screen.queryByRole("button")).toBeInTheDocument()
 
 // RIGHT: Use getBy to fail fast
 expect(screen.getByRole("button")).toBeInTheDocument()
@@ -136,3 +137,5 @@ expect(screen.getByRole("alert")).not.toBeInTheDocument() // Throws before expec
 // RIGHT: Use queryBy for absence assertions
 expect(screen.queryByRole("alert")).not.toBeInTheDocument()
 ```
+
+Choose queries by semantics, not a rigid ranking. Password inputs have no implicit textbox role; use their label. Placeholder text is not a substitute for a label.

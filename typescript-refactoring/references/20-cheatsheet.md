@@ -90,7 +90,7 @@ items
 
 | Principle | Practice |
 |-----------|----------|
-| CQS | Query returns data, command returns void |
+| CQS | Separate reads and writes where useful; keep intentional atomic result-returning commands |
 | Isolation | Functional core, imperative shell |
 | Dependency injection | Pass dependencies, do not reach for them |
 
@@ -98,9 +98,9 @@ items
 
 | Error type | Strategy |
 |------------|----------|
-| Expected | Return Result or Either type |
+| Expected | Follow the existing error contract; results and exceptions are alternatives |
 | Unexpected | Throw, catch at boundary |
-| Transient | Retry with backoff |
+| Transient | Retry with bounded backoff only when replay is safe and the failure is retryable |
 
 ## Real-World Cases
 
@@ -141,19 +141,11 @@ Presentation -> Application -> Domain <- Infrastructure
 
 ### Before Refactoring
 
-```bash
-npm test
-npm run test:coverage
-npx @biomejs/biome check .
-```
+Run the repo's existing targeted tests and checks to establish a baseline. Coverage inspection is useful for risky boundaries, not a mandatory percentage exercise.
 
 ### During Refactoring
 
-```bash
-npm test -- --related
-npx @biomejs/biome check --write .
-npm run typecheck
-```
+Use installed test, typecheck, lint, and build scripts as applicable. Scope formatting to touched files. Check runner-specific arguments instead of assuming a generic related-test command works.
 
 ### Commit Message Format
 
@@ -164,9 +156,11 @@ refactor: extract validation to helper
 refactor: rename user to account for clarity
 refactor: reduce nesting with guard clauses
 chore: remove dead code in payment module
-style: apply Biome formatting
+style: format touched files
 test: add characterization tests for UserService
 ```
+
+Commit messages are examples; do not commit without authorization.
 
 ## Technique Decision Tree
 

@@ -33,11 +33,17 @@ test("renders user", async () => {
 // WARNING: setTimeout fires after test
 // FIX: Use fake timers and advance them explicitly
 beforeEach(() => jest.useFakeTimers());
-afterEach(() => jest.useRealTimers());
+afterEach(() => {
+  cleanup();
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
+});
 
-test("shows toast after delay", () => {
+test("shows toast after delay", async () => {
   render(<Toast delay={1000} />);
-  jest.advanceTimersByTime(1000);
+  await act(async () => {
+    jest.advanceTimersByTime(1000);
+  });
   expect(screen.getByText(/saved/i)).toBeInTheDocument();
 });
 ```
@@ -50,11 +56,11 @@ Don't blindly wrap things in `act()`. In most cases, the warning is telling you 
 
 Almost always caused by shared mutable state between tests:
 
-1. **Mock not cleaned up** — Add `afterEach(() => jest.restoreAllMocks())` or use `jest.clearAllMocks()`
+1. **Mock not cleaned up** — Restore spies/replaced properties with `restoreAllMocks`; `clearAllMocks` clears call history but does not restore implementations. Reset per-test mock behavior separately.
 2. **Shared QueryClient** — Create a new `QueryClient` per test, not at module level
 3. **MSW handlers not reset** — Use `afterEach(() => server.resetHandlers())`
 4. **Global state mutation** — Zustand/Redux stores persist between tests; reset in `afterEach`
-5. **DOM not cleaned up** — RTL's `cleanup` runs automatically with Jest/Vitest; if using a custom setup, call it manually
+5. **DOM not cleaned up** — RTL auto-cleanup relies on a global `afterEach`. With Vitest globals disabled, explicitly register `afterEach(cleanup)` in setup.
 
 ## JSDOM Limitations
 
@@ -78,8 +84,8 @@ If your component relies heavily on layout, consider E2E tests (Playwright/Cypre
 
 1. Check the element actually renders — use `screen.debug()` to inspect the DOM
 2. Check the role is correct — use `screen.logTestingPlaygroundURL()` for suggestions
-3. Check `name` option uses regex: `{ name: /submit/i }` not `{ name: "Submit" }` (exact match may miss)
-4. Element may be hidden — `getByRole` ignores hidden elements by default; use `{ hidden: true }` if needed
+3. Check the actual accessible name; exact strings and regex are both valid. Avoid broad regex that matches the wrong control.
+4. Element may be hidden — `getByRole` excludes inaccessible elements by default. Use `{ hidden: true }` only when intentionally testing hidden content, not to bypass a visibility bug.
 
 ### "Found multiple elements with..."
 

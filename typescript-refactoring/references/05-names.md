@@ -109,6 +109,8 @@ check(x) // Cryptic
 
 ### Getters vs Finders
 
+The distinction below is an optional project convention, not a language rule (`Map.get` can return `undefined`). Match local naming and preserve return/error behavior when renaming.
+
 ```ts
 // getUser: Assumes existence, throws if not found
 function getUser(id: string): User {

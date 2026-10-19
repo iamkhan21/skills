@@ -1,6 +1,7 @@
 # Error Handling
 
 Handle errors at the appropriate level with clear strategies.
+Preserve the existing error contract during refactoring. Results, exceptions, and custom error classes are alternatives, not mandatory layers. Changing between them requires updating callers and belongs in explicit scope.
 
 ## Types of Errors
 
@@ -41,7 +42,7 @@ These are bugs or external failures.
 ```ts
 // Unexpected error: Something went wrong
 class UnexpectedError extends Error {
-  constructor(message: string, public cause?: Error) {
+  constructor(message: string, public cause?: unknown) {
     super(message)
     this.name = 'UnexpectedError'
   }
@@ -50,7 +51,7 @@ class UnexpectedError extends Error {
 
 ## Either/Result Pattern
 
-Return success or error explicitly, don't throw for expected cases.
+Consider returning success or error explicitly when callers benefit from exhaustive handling. Keep throwing conventions when they already provide a clear, tested contract.
 
 ```ts
 // Basic Either type
@@ -85,11 +86,11 @@ type Result<T, E = Error> =
   | { ok: true; value: T }
   | { ok: false; error: E }
 
-function Ok<T>(value: T): Result<T> {
+function Ok<T>(value: T): { ok: true; value: T } {
   return { ok: true, value }
 }
 
-function Err<E>(error: E): Result<never, E> {
+function Err<E>(error: E): { ok: false; error: E } {
   return { ok: false, error }
 }
 
@@ -135,7 +136,8 @@ class AppError extends Error {
   constructor(
     message: string,
     public readonly code: string,
-    public readonly statusCode: number = 500
+    public readonly statusCode: number = 500,
+    public readonly cause?: unknown
   ) {
     super(message)
     this.name = this.constructor.name
@@ -178,7 +180,7 @@ function getUser(id: string): User {
 ```ts
 function parseConfig(data: unknown): Config {
   if (!isConfig(data)) {
-    throw new ValidationError(['Invalid config structure'])
+    throw new AppError('Invalid config structure', 'INVALID_CONFIG', 400)
   }
   return data
 }
@@ -192,10 +194,10 @@ async function loadConfig(path: string): Promise<Config> {
     const data = await fs.readFile(path, 'utf-8')
     return parseConfig(JSON.parse(data))
   } catch (error) {
-    if (error instanceof ValidationError) {
+    if (error instanceof AppError) {
       throw error // Re-throw domain errors
     }
-    throw new AppError(`Failed to load config from ${path}`, 'CONFIG_LOAD_ERROR')
+    throw new AppError(`Failed to load config from ${path}`, 'CONFIG_LOAD_ERROR', 500, error)
   }
 }
 ```
@@ -205,14 +207,16 @@ async function loadConfig(path: string): Promise<Config> {
 ```ts
 async function handleRequest(req: Request, res: Response) {
   try {
-    const config = await loadConfig(req.body.path)
+    // Server-selected path, not arbitrary user-controlled filesystem input.
+    const config = await loadConfig(approvedConfigPath)
     res.json({ success: true, config })
   } catch (error) {
     if (error instanceof AppError) {
+      if (error.statusCode >= 500) console.error('Config request failed:', error)
       res.status(error.statusCode).json({
         success: false,
         code: error.code,
-        message: error.message
+        message: error.statusCode >= 500 ? 'An unexpected error occurred' : error.message
       })
     } else {
       // Unexpected error
@@ -229,46 +233,19 @@ async function handleRequest(req: Request, res: Response) {
 
 ## Retry Strategies
 
-```ts
-async function withRetry<T>(
-  fn: () => Promise<T>,
-  options: {
-    maxRetries?: number
-    delay?: number
-    backoff?: 'fixed' | 'exponential'
-  } = {}
-): Promise<T> {
-  const { maxRetries = 3, delay = 1000, backoff = 'exponential' } = options
-  
-  let lastError: Error | undefined
-  
-  for (let attempt = 0; attempt <= maxRetries; attempt++) {
-    try {
-      return await fn()
-    } catch (error) {
-      lastError = error as Error
-      
-      if (attempt < maxRetries) {
-        const waitTime = backoff === 'exponential' 
-          ? delay * Math.pow(2, attempt)
-          : delay
-        await new Promise(resolve => setTimeout(resolve, waitTime))
-      }
-    }
-  }
-  
-  throw lastError
-}
+Retrying is a behavior change, not incidental cleanup. Reuse the existing client policy where possible.
 
-// Usage
-const data = await withRetry(() => fetchData(), { maxRetries: 3, delay: 500 })
-```
+- Retry only classified transient failures, not validation, authorization, or programming errors.
+- Require an idempotent operation or a verified idempotency-key contract. A timeout does not prove a payment or write failed.
+- Bound attempts, total duration, and backoff; respect cancellation and server retry hints. Add jitter where coordinated retries could overload the service.
+- Validate retry counts and delays as finite, nonnegative values; define whether the count means attempts or retries.
+- Preserve the original failure and test exhaustion, cancellation, and non-retryable errors.
 
 ## Checklist
 
 - [ ] Expected vs unexpected errors distinguished
-- [ ] Custom error types for domain errors
-- [ ] Either/Result pattern for expected failures
+- [ ] Existing caller contract preserved; custom types added only when useful
+- [ ] Expected failures handled explicitly using the project's convention
 - [ ] Errors handled at appropriate level
-- [ ] Retry strategy for transient failures
-- [ ] Error messages include actionable information
+- [ ] Any retries are bounded, classified, and safe to replay
+- [ ] Diagnostics preserve causes without exposing internal details to users

@@ -7,50 +7,18 @@ description: Creates modern full-page UI with strong visual direction while pres
 
 ## Quick Start
 
-1) Confirm page scope
-- This skill is for a **full page** or page-sized surface, not an entire app or design system.
-- If the request is broader, implement one page first.
+1. Identify the page's audience, purpose, primary action, and required content.
+2. Inspect the stack and existing design language, then choose a fitting visual direction.
+3. Build the requested page and interactions using existing conventions.
+4. Verify responsive behavior, accessibility, and UX; report assumptions and actual checks.
 
-2) Understand the page before coding
-- What is the page for?
-- Who is it for?
-- What is the primary action?
-- What content or sections are required?
+Keep the scope page-sized. For an app-wide request, agree on a first page or sequence rather than silently reducing scope.
 
-3) Choose a visual direction
-- Pick a clear aesthetic instead of defaulting to generic SaaS UI.
-- Favor memorable composition, typography, color, and spacing.
-- Keep visuals subordinate to readability and navigation.
-
-4) Build with the repo's existing conventions
-- Inspect current framework, libraries, and component patterns first.
-- Reuse installed dependencies and established patterns.
-
-5) Self-audit before handoff
-- Check accessibility and UX fundamentals.
-- Summarize assumptions and tradeoffs.
-
-Links:
-- Workflow details: see `modern-ui-page/references/workflow.md`
-- Accessibility checks: see `modern-ui-page/references/accessibility.md`
-- UX checks: see `modern-ui-page/references/ux.md`
-- Visual direction guidance: see `modern-ui-page/references/visual-direction.md`
-
-## Scope
-
-Use this skill for:
-- Landing pages
-- Marketing pages
-- Homepage redesigns
-- Dashboard pages
-- Promotional or campaign pages
-- Any page-level UI that should feel modern, polished, and intentional
-
-Do not use this skill for:
-- App bootstrapping
-- Full design systems
-- Test-heavy workflows
-- Deep architecture setup
+Read only the references needed for the task:
+- [Workflow](references/workflow.md): page narrative and implementation order
+- [Accessibility](references/accessibility.md): interaction and readability checks
+- [UX](references/ux.md): hierarchy, actions, and states
+- [Visual direction](references/visual-direction.md): composition and styling choices
 
 ## Workflow
 
@@ -65,6 +33,7 @@ Identify:
 - device priorities
 
 If the prompt is sparse, infer a direction from context and state the assumptions.
+Ask before guessing about consequential product behavior, real-world claims, or missing data contracts.
 
 ### 2) Pick a strong visual concept
 
@@ -75,7 +44,7 @@ Choose an intentional direction, for example:
 - playful and high-contrast
 - product-marketing with narrative sections
 
-Do not mix several weak directions. Commit to one clear idea.
+Choose a direction that fits the audience and existing brand. Consistency can be more valuable than novelty, especially in an established product.
 
 ### 3) Build the page
 
@@ -84,28 +53,16 @@ Do not mix several weak directions. Commit to one clear idea.
 - Use existing design tokens, theme primitives, and components if available.
 - Keep section hierarchy easy to scan.
 - Make the primary CTA obvious.
+- Make controls work: use real destinations and implement requested interactions. Label demo-only behavior and placeholders; do not invent testimonials, customer logos, or product claims.
+- Handle relevant loading, empty, error, and success states for data-driven pages.
 
-### 4) Preserve accessibility fundamentals
+### 4) Check usability
 
-Always check:
-- semantic landmarks and heading order
-- readable text and contrast-aware color usage
-- visible focus styles
-- keyboard-safe interaction patterns
-- meaningful labels, alt text, and button text where relevant
-- responsive behavior across small and large screens
+- Check landmarks, headings, labels, contrast, focus, and keyboard operation against the accessibility reference.
+- Check hierarchy, action clarity, responsive layout, and relevant states against the UX reference.
+- Keep typography and composition strong without relying on decoration or motion.
 
-### 5) Preserve UX fundamentals
-
-Always check:
-- the page communicates its purpose quickly
-- information hierarchy is obvious
-- important actions are easy to find
-- spacing supports readability
-- empty, loading, and error states exist where the feature needs them
-- visuals do not obscure content or navigation
-
-### 6) Handoff
+### 5) Handoff
 
 At the end, briefly report:
 - the visual direction chosen
@@ -114,31 +71,19 @@ At the end, briefly report:
 
 ## Guardrails
 
-Always:
 - inspect surrounding code before editing
 - reuse installed libraries before adding new ones
-- optimize for page quality, not just speed of implementation
-- keep the page distinctive without sacrificing clarity
-
-Never:
-- invent a new stack when the repo already has conventions
-- hide critical actions behind unusual interactions
-- sacrifice readability for decoration
-- claim accessibility compliance without checking the basics
+- preserve design tokens and established interaction patterns unless redesigning them is in scope
+- avoid unusual interactions that hide critical actions or sacrifice readability
+- avoid new dependencies or remote assets just for decoration; respect licensing and project privacy constraints
 
 ## Verification
 
 Before completing work with this skill:
 - inspect repo scripts and run the relevant validators
 - review the page against the accessibility and UX references
+- if browser tools are available, inspect narrow and wide viewports, keyboard focus, overflow, and the primary action; fix observed issues
+- use real-browser tests for layout and interaction behavior that DOM simulators cannot verify
+- distinguish code review from browser checks; do not claim accessibility compliance or visual verification without evidence
 - confirm the result matches the user's requested page scope
 - call out any unresolved tradeoffs explicitly
-
-## Output Expectations
-
-The final result should:
-- feel visually intentional rather than generic
-- read clearly on first scan
-- guide the user toward the primary action
-- respect accessibility and UX fundamentals
-- fit naturally into the repo's existing frontend patterns

@@ -26,7 +26,7 @@ test("submits form", async () => {
 });
 ```
 
-Use `screen` for all DOM queries—single source of truth.
+Prefer `screen` for document queries. Use `within` to scope to a region and render-bound queries when using a custom container.
 
 ## Domain-Specific Setup
 

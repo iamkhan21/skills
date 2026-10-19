@@ -40,13 +40,15 @@ function getCurrentTime(): Date {
 - **Query**: Returns data, no side effects
 - **Command**: Performs action, may have side effects, returns void or status
 
+CQS is a heuristic. Operations such as `pop`, create-and-return, or atomic database updates legitimately combine mutation and a result. Splitting them can change public contracts or lose atomicity; do so only when the actual boundary benefits.
+
 ```ts
-// Bad: Mixes query and command
+// Valid combined operation: mutation and result are one contract
 function popItem<T>(stack: T[]): T | undefined {
   return stack.pop() // Returns item AND modifies stack
 }
 
-// Good: Separated
+// Alternative interface, not a drop-in replacement
 function peekItem<T>(stack: T[]): T | undefined {
   return stack[stack.length - 1] // Query: just look
 }
@@ -105,18 +107,17 @@ class OrderService {
 // Pure core + impure shell
 class OrderService {
   // Pure: Easy to test, predictable
-  calculateTotal(items: CartItem[], discount: number): number {
-    const subtotal = items.reduce((sum, item) => sum + item.price, 0)
-    return subtotal - discount
+  private calculateSubtotal(items: CartItem[]): number {
+    return items.reduce((sum, item) => sum + item.price, 0)
   }
 
   // Impure shell: Orchestrates side effects
   async processOrder(items: CartItem[]): Promise<Order> {
+    const subtotal = this.calculateSubtotal(items) // preserve calculation before await
     const discount = await this.fetchDiscount(this.userId) // Side effect
-    const total = this.calculateTotal(items, discount) // Pure
-    const order = { items, total }
-    await this.saveOrder(order) // Side effect
-    return order
+    const finalTotal = subtotal - discount
+    await this.saveOrder({ items, total: finalTotal })
+    return { items, total: finalTotal } // preserve a distinct returned object
   }
 }
 ```

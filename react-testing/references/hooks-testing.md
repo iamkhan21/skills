@@ -1,5 +1,7 @@
 # Testing Hooks
 
+Prefer component-level tests for hooks used only by that component. Use `renderHook` for a hook's own public contract, not to expose private implementation details.
+
 - [Basic Usage](#basic-usage)
 - [Testing State Updates](#testing-state-updates)
 - [Testing with Props](#testing-with-props)
@@ -49,17 +51,17 @@ test("fetches data", async () => {
 ## Testing with Props
 
 ```typescript
-test("updates when prop changes", () => {
+test("updates when prop changes", async () => {
   const { result, rerender } = renderHook(
     ({ id }) => useFetchUser(id),
     { initialProps: { id: 1 } }
   );
   
-  expect(result.current.user.id).toBe(1);
+  await waitFor(() => expect(result.current.user?.id).toBe(1));
   
   rerender({ id: 2 });
   
-  expect(result.current.user.id).toBe(2);
+  await waitFor(() => expect(result.current.user?.id).toBe(2));
 });
 ```
 

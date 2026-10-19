@@ -193,7 +193,7 @@ Dependencies should point toward stability.
 
 ### Dependency Inversion
 
-High-level modules shouldn't depend on low-level modules. Both should depend on abstractions.
+Consider a stable abstraction when a concrete dependency creates real testing or change pressure. Direct dependencies can be appropriate; do not introduce interfaces merely to satisfy a layering rule. Preserve sync/async return contracts unless an API migration is in scope.
 
 ```ts
 // Bad: High-level depends on low-level
@@ -205,9 +205,9 @@ class UserService {
   }
 }
 
-// Good: Both depend on abstraction
+// Alternative async contract: migrate callers explicitly if changing from sync
 interface Database {
-  query<T>(sql: string, params: any[]): Promise<T>
+  query<T>(sql: string, params: unknown[]): Promise<T>
 }
 
 class UserService {
@@ -219,7 +219,7 @@ class UserService {
 }
 
 class PostgresDatabase implements Database {
-  async query<T>(sql: string, params: any[]): Promise<T> {
+  async query<T>(sql: string, params: unknown[]): Promise<T> {
     // Implementation
   }
 }

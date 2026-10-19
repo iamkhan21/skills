@@ -1,6 +1,7 @@
 # Visual Direction Without Generic UI
 
 Modern UI should feel intentional, not randomly decorated.
+Start from the existing brand and component system. A familiar, restrained interface can be the right answer; novelty is not a requirement.
 
 ## Pick One Dominant Idea
 
@@ -17,30 +18,30 @@ Do not stack unrelated visual trends.
 
 ## Use the Core Design Levers Well
 
-## Typography
+### Typography
 
 - Let typography establish tone and hierarchy
 - Display type can be expressive, but body text should stay easy to read
 - Size contrast should create rhythm, not chaos
 
-## Color
+### Color
 
 - Use a palette with a clear point of view
 - Accent colors should highlight meaning, not appear everywhere
 - High drama is fine if text and actions stay legible
 
-## Spacing and Composition
+### Spacing and Composition
 
 - Strong pages feel composed, not merely assembled
 - Use whitespace with intention
 - Let layout create emphasis before adding decorative effects
 
-## Surfaces and Depth
+### Surfaces and Depth
 
 - Use shadows, borders, blur, texture, or gradients only when they strengthen the concept
 - Decorative depth should not muddy hierarchy
 
-## Motion
+### Motion
 
 - Motion should help reveal structure or give feedback
 - Avoid animation that delays comprehension or competes with content
@@ -49,7 +50,7 @@ Do not stack unrelated visual trends.
 
 - generic SaaS gradient with no point of view
 - every card using the same visual weight
-- default component-library look with minimal customization
+- overriding useful component-library conventions solely to make the page look novel
 - adding decoration after the layout is already weak
 - trendy effects that harm readability
 

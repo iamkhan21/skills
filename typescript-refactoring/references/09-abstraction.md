@@ -58,7 +58,7 @@ async function getUsers(page: number): Promise<User[]> {
   return db.query('SELECT * FROM users LIMIT ? OFFSET ?', [limit, offset])
 }
 
-// Fixed: Abstraction hides pagination details
+// Alternative API: migrate callers explicitly; this changes the return contract.
 interface PaginatedResult<T> {
   items: T[]
   hasNextPage: boolean
@@ -68,7 +68,13 @@ interface PaginatedResult<T> {
 async function getUsers(page: number, pageSize = 20): Promise<PaginatedResult<User>> {
   const offset = page * pageSize
   const items = await db.query('SELECT * FROM users LIMIT ? OFFSET ?', [pageSize, offset])
-  const totalItems = await db.query('SELECT COUNT(*) FROM USERS')
+  // This example assumes an app adapter whose query() returns row arrays.
+  // Extract the count according to the actual client's contract.
+  const countRows = await db.query('SELECT COUNT(*) AS total FROM users')
+  const totalItems = Number(countRows[0]?.total)
+  if (!Number.isSafeInteger(totalItems) || totalItems < 0) {
+    throw new Error('Invalid user count')
+  }
   return {
     items,
     hasNextPage: offset + items.length < totalItems,
@@ -99,6 +105,7 @@ function getOrders(options?: { useCache: boolean }): Order[] {
 ### Rule of Three
 
 Wait for patterns to emerge before abstracting.
+Three occurrences are a prompt to investigate, not a requirement or justification. A wrapper that only renames `RegExp.test` adds little value; keep domain validators separate when they encode different rules.
 
 ```ts
 // Instance 1

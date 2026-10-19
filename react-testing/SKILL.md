@@ -1,15 +1,13 @@
 ---
 name: react-testing
-description: Testing React components, hooks, and interactions with React Testing Library. Use when writing new tests, debugging failing tests, refactoring test code, setting up test infrastructure, mocking APIs in React tests, or when the user mentions Jest/Vitest with React, `render`, `screen`, `userEvent`, `waitFor`, `findBy`, MSW, or testing patterns. Also use when the user asks how to test a specific React component or hook, even if they don't mention "testing library" explicitly.
-triggers:
-  - file_globs: ["*.test.tsx", "*.test.ts", "*.spec.ts", "*.spec.tsx"]
-  - keywords: ["render", "screen", "userEvent", "waitFor", "findBy", "getByRole", "renderHook"]
-  - topics: ["Testing Library", "React Testing Library", "component tests", "hook tests", "Jest React", "Vitest React"]
+description: Write, debug, or refactor React component and hook tests with React Testing Library, Jest or Vitest, user-event, and MSW. Use for test setup, queries, async UI, providers, API mocking, flaky tests, or questions about testing a React interaction. Not for non-React tests or visual/layout verification that needs a real browser.
 ---
 
 # React Testing
 
 ## Quick Start
+
+Inspect the installed runner, React and Testing Library versions, setup file, and nearby tests first. Reuse existing helpers. Examples assume runner APIs and jest-dom matchers are configured; see [runner setup](references/vitest-differences.md).
 
 ```tsx
 import { render, screen } from "@testing-library/react";
@@ -28,7 +26,16 @@ test("submits form with user input", async () => {
 
 ## Core Principle
 
-**Test behavior, not implementation.** Tests verify observable behavior through public interfaces (DOM, props, callbacks), not internal state or private helpers. A refactor that preserves behavior should never break tests.
+**Test behavior, not implementation.** Verify observable behavior through public interfaces (DOM, props, callbacks), not private state. Prefer tests that survive internal refactors.
+
+## Workflow
+
+1. Identify the behavior and failure mode from the request and code; ask only if a missing requirement affects the test.
+2. Reproduce a reported bug with a focused test when practical. Test intended behavior, not an implementation accident.
+3. Use real components and necessary providers, await interactions and outcomes, and isolate each test's state.
+4. Run focused tests, then relevant neighboring tests and type/lint checks. Report what ran and what remains unverified.
+
+For more detail, see [workflow](references/workflow.md). Keep production changes within the user's scope.
 
 ## Framework Note
 
@@ -48,7 +55,7 @@ See [references/user-interactions.md](references/user-interactions.md).
 
 ## Async Patterns
 
-Use `findBy*` to wait for a single element. Use `waitFor` when you need multiple assertions or conditions. Keep side effects (clicks, typing) outside `waitFor` — only put assertions inside.
+Use `findBy*` for an element appearing, `findAllBy*` for several, and `waitFor` for an eventual condition such as a callback. Keep interactions outside retry callbacks; prefer one focused assertion per `waitFor`. Use disappearance checks for loading UI rather than arbitrary sleeps.
 
 See [references/async-patterns.md](references/async-patterns.md).
 
@@ -60,13 +67,13 @@ See [references/accessibility-matchers.md](references/accessibility-matchers.md)
 
 ## Test Utilities
 
-Reduce boilerplate with setup functions that return `user` and domain-specific actions. Use `screen` for all DOM queries.
+Extract repeated setup when it helps readability. Prefer `screen` for document queries and `within` for scoped queries; use render-bound queries for a custom container.
 
 See [references/test-utilities.md](references/test-utilities.md).
 
 ## Mocking
 
-Mock only at system boundaries: network, time, randomness, browser APIs. Never mock your own components, hooks, or internal utilities.
+Prefer mocks at boundaries: network, time, randomness, browser APIs, and external SDK adapters. Keep internal components and hooks real by default. A narrow internal mock can be justified for expensive or unavailable dependencies; state what integration it excludes and cover that separately when important.
 
 See [references/mocking-patterns.md](references/mocking-patterns.md).
 
@@ -104,18 +111,18 @@ Covers `act()` warnings, tests that pass alone but fail together, JSDOM limitati
 
 See [references/troubleshooting.md](references/troubleshooting.md).
 
-## React 18+ Notes
+## Environment Guardrails
 
-- `@testing-library/react` v14+ handles React 18's `createRoot` automatically — no manual migration needed
-- `act()` warnings are more strict in React 18; most are resolved by properly awaiting async operations with `findBy*` or `waitFor`
-- `React.startTransition` updates are batched — use `waitFor` to assert on their results
-- Concurrent features (useTransition, useDeferredValue) work in tests but don't exhibit concurrent scheduling in JSDOM — test the user-visible behavior, not the scheduling
+- Check compatibility against installed versions rather than assuming runner APIs or React behavior are identical across versions.
+- RTL helpers handle `act` for normal rendering and interactions. Await async work; use explicit `act` for direct hook updates or manual timer advancement, not to hide warnings.
+- DOM simulators do not prove layout, browser navigation, or concurrent scheduling. Use real-browser tests for those requirements.
+- Restore spies, timers, and global changes; ensure DOM cleanup is configured, especially with Vitest globals disabled.
 
 ## Test Design
 
 - One behavior per test
 - Test name describes behavior, not implementation
 - Prefer integration-style tests over shallow unit tests
-- ~70% coverage sufficient
+- Prioritize critical paths, failure states, and regressions; honor the project's coverage policy rather than inventing a percentage target.
 
 See [references/design-patterns.md](references/design-patterns.md) and [references/workflow.md](references/workflow.md).

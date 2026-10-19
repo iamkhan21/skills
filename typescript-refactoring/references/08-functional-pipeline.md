@@ -1,6 +1,7 @@
 # Functional Pipeline
 
 Transform data through a chain of pure functions.
+Use a pipeline only when clearer than the loop. Preserve mutation/identity contracts and callback ordering; staged array methods and an interleaved loop are not equivalent for stateful callbacks, exceptions, or sparse arrays.
 
 ## Core Concepts
 
@@ -23,7 +24,7 @@ function doubleImpure(x: number): number {
 
 ### Immutability
 
-Don't mutate data; return new data.
+Prefer local, predictable data flow. Returning new data is useful when callers do not depend on mutation; changing a mutating API is a contract change.
 
 ```ts
 // Bad: Mutates input
@@ -57,19 +58,9 @@ const total = calculateTotal(availableItems)
 const discountedTotal = applyDiscount(total, discountRate)
 const formattedTotal = formatCurrency(discountedTotal)
 
-// Alternative: Pipe function
-const pipe = <T>(...fns: Array<(arg: T) => T>) => 
-  (value: T) => fns.reduce((acc, fn) => fn(acc), value)
-
-const processOrder = pipe(
-  filterAvailable,
-  calculateTotal,
-  (total) => applyDiscount(total, discountRate),
-  formatCurrency
-)
-
-const result = processOrder(items)
 ```
+
+Prefer named intermediates over adding a pipeline helper. A helper typed as `(T) => T` cannot compose transformations from arrays to numbers to strings without losing type safety.
 
 ## Array Methods as Pipeline
 
@@ -148,9 +139,11 @@ function assignId(user: ValidatedUser): User {
 }
 
 function createUser(raw: RawUser): User {
-  return pipe(parseUser, assignId)(raw)
+  return assignId(parseUser(raw))
 }
 ```
+
+`assignId` is not pure when `generateId` uses randomness or external state; keep that effect explicit.
 
 ## Reduce for Aggregation
 
@@ -203,23 +196,12 @@ for (const item of items) {
 
 ### Complex State Dependencies
 
-```ts
-// Don't force functional when state is complex
-let retries = 0
-while (retries < MAX_RETRIES) {
-  try {
-    return await fetchData()
-  } catch (error) {
-    retries++
-    await delay(retries * 1000)
-  }
-}
-```
+Keep explicit loops for stateful workflows, early exits, and cancellation when they communicate control flow better. Do not turn retries into an incidental pipeline example; retry classification, replay safety, and exhaustion belong to the [error-handling contract](11-error-handling.md).
 
 ## Checklist
 
-- [ ] Functions are pure (no side effects)
-- [ ] Data is not mutated
+- [ ] Side effects and callback ordering remain explicit and stable
+- [ ] Mutation and identity behavior preserved at public boundaries
 - [ ] Pipeline reads top-to-bottom
 - [ ] Each step does one thing
 - [ ] Intermediate variables used for clarity, not just to break pipeline

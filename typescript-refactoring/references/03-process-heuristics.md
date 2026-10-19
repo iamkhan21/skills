@@ -11,12 +11,13 @@ Each step should be easy to review and easy to back out.
 git commit -m "refactor: rewrite user module"
 
 # Better
+git commit -m "test: add characterization coverage for validation"
 git commit -m "refactor: extract validateEmail helper"
 git commit -m "refactor: replace inline validation with helper"
-git commit -m "test: add characterization coverage for validation"
 ```
 
 Small steps make it easier to spot regressions, understand intent, and stop early when the main pain point is gone.
+Commit examples illustrate grouping only. Do not create commits unless authorized, and protect behavior with tests before the structural change rather than after it.
 
 ## One Conceptual Transformation At A Time
 
@@ -46,11 +47,7 @@ After each meaningful change:
 2. Compare against the preserved behavior surface.
 3. Stop and investigate if anything unexpected changes.
 
-```bash
-npm test -- --related
-npm run typecheck
-npm run build
-```
+Use the repo's actual targeted-test, typecheck, and build commands. Related-test flags vary by runner and may require file arguments; do not copy a generic command without checking its meaning.
 
 If automated tests are weak, keep a short manual verification list and reuse it after each risky step.
 

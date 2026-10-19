@@ -1,6 +1,6 @@
 # Vitest vs Jest
 
-Vitest is API-compatible with Jest for most cases. The main differences:
+Many assertion and mock APIs are similar, but setup, module mocking, and environments are not interchangeable. Follow the installed runner's version and module system.
 
 ## Import Style
 
@@ -27,17 +27,19 @@ import { describe, test, expect, vi } from "vitest";
 ## Module Mocking
 
 ```typescript
-// Jest: hoisted automatically
+// Jest in a supported transformed CommonJS setup; native ESM differs
 jest.mock("../api", () => ({
   fetchUser: jest.fn(),
 }));
 
-// Vitest: also hoisted, but use vi.importActual for partial mocks
+// Vitest: hoisted; use an async import for partial mocks
 vi.mock("../api", async () => {
-  const actual = await vi.importActual("../api");
+  const actual = await vi.importActual<typeof import("../api")>("../api");
   return { ...actual, fetchUser: vi.fn() };
 });
 ```
+
+`vi.importActual` is asynchronous, unlike `jest.requireActual`. Hoisted factories cannot freely capture runtime variables; use the runner's supported hoisting helpers where needed. Jest native ESM uses a different mocking flow; do not mechanically rename APIs.
 
 ## Fake Timers
 
@@ -73,8 +75,16 @@ export default defineConfig({
 ## Setup File
 
 ```typescript
-// test-setup.ts — identical for both Jest and Vitest
+// Jest setupFilesAfterEnv (default globals)
 import "@testing-library/jest-dom";
+
+// Vitest setupFiles
+import "@testing-library/jest-dom/vitest";
+
+// With Vitest globals disabled, register cleanup explicitly:
+import { afterEach } from "vitest";
+import { cleanup } from "@testing-library/react";
+afterEach(cleanup);
 ```
 
-`@testing-library/jest-dom` works with Vitest despite the name.
+Choose the matching setup block, not both matcher entry points. Include the TypeScript setup file in the test tsconfig. If a `types` array exists, extend it without dropping environment types.

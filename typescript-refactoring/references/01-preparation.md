@@ -83,43 +83,9 @@ it('returns -1 for empty cart (current behavior)', () => {
 
 ## Tighten Mechanical Guardrails
 
-Make the compiler and linter help you.
+Run the project's existing compiler, linter, and tests to establish the baseline. Record pre-existing failures and keep checks targeted to the touched behavior.
 
-```jsonc
-{
-  "compilerOptions": {
-    "strict": true,
-    "noImplicitAny": true,
-    "strictNullChecks": true,
-    "noUnusedLocals": true
-  }
-}
-```
-
-### Biome
-
-```jsonc
-{
-  "linter": {
-    "enabled": true,
-    "rules": {
-      "recommended": true,
-      "correctness": {
-        "noUnusedVariables": "error"
-      }
-    }
-  },
-  "formatter": {
-    "enabled": true
-  }
-}
-```
-
-### OxLint
-
-```bash
-npx oxlint .
-```
+Do not install a new linter or enable project-wide strict flags as a side effect of local cleanup. If missing tooling is the main obstacle, propose that setup separately and assess the migration scope first.
 
 ## Checklist
 

@@ -1,11 +1,11 @@
 # Tooling Baseline (pnpm + Vitest + Oxc)
 
-This skill assumes the project is already scaffolded. It adds a baseline for testing, linting, and formatting.
+Use these defaults only for missing tooling in an already-scaffolded project. Keep existing tools, package manager, scripts, and version constraints unless migration is requested. Commands below assume pnpm has been selected.
 
 ## pnpm baseline
 
-- Prefer pnpm for all installs.
-- Make exact versions the default (so the agent doesn't need `--exact` everywhere):
+- Use pnpm when the repo selects it, or as the default when no package manager exists.
+- Preserve the existing version range policy. If exact versions are requested, merge this into `.npmrc` rather than replacing the file:
 
   - Add `.npmrc`:
 
@@ -15,14 +15,14 @@ This skill assumes the project is already scaffolded. It adds a baseline for tes
 
 ## Install dev dependencies
 
-Install:
+For missing tools, install only the needed packages:
 - `vitest`
-- `happy-dom` (lightweight DOM environment for tests)
+- `jsdom` or `happy-dom` for DOM tests (choose one supported by the app)
 - `oxlint`
 - `oxfmt`
 
 ```sh
-pnpm add -D vitest happy-dom oxlint oxfmt
+pnpm add -D vitest jsdom oxlint oxfmt
 ```
 
 ## Add `package.json` scripts
@@ -50,11 +50,13 @@ pnpm exec oxlint --init
 ```
 
 - Config discovery:
-  - Use either `.oxlintrc.json` or `oxlint.config.ts` (not both).
+  - Use the config format supported by the installed version; avoid competing configs.
+
+- Keep framework-specific ESLint checks that Oxlint does not replace. Tool migration is separate work.
 
 ## Vitest config
 
-Create a `vitest.config.ts` (or add to the existing Vite config):
+Extend the existing test config. If adding a separate `vitest.config.ts`, it takes precedence over the Vite config; explicitly merge needed aliases and plugins with `mergeConfig` rather than assuming inheritance. A standalone test config can start with:
 
 ```ts
 import { defineConfig } from 'vitest/config'
@@ -62,15 +64,15 @@ import { defineConfig } from 'vitest/config'
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'happy-dom', // lighter and faster than jsdom
+    environment: 'jsdom', // use node for non-DOM tests; happy-dom is another option
   },
 })
 ```
 
-- Install `happy-dom` as a dev dep: `pnpm add -D happy-dom`
+- Install the selected environment package. Use browser tests for real layout or browser behavior.
 - `globals: true` makes `describe`, `it`, `expect` available without imports.
-  If enabled, add `"types": ["vitest/globals"]` to `tsconfig.json` `compilerOptions` for type support.
-- Start with file-based tests: `**/*.test.ts` / `**/*.spec.ts`.
+  If enabled, add `"vitest/globals"` to the test config's existing `compilerOptions.types` without dropping other entries. Keep test globals out of production configs when possible. If globals are disabled, import runner APIs and explicitly register RTL cleanup in the setup file.
+- Co-locate tests using the repo's conventions; React tests containing JSX use `.test.tsx` / `.spec.tsx`.
 - For files that need a different environment, use the per-file override docblock:
 
   ```ts
@@ -91,10 +93,10 @@ export default defineConfig({
 
 ## Optional: UI/CSS choice impacts tooling
 
-Ask: "Do you want a UI/component library or CSS framework? If yes, which one?"
+Keep the existing UI/CSS approach. Ask about a new library only when it is part of the requested setup.
 
 Then adjust only what is necessary:
-- Tailwind/utility CSS: add its PostCSS tooling and ensure formatting/linting ignores generated files.
+- Tailwind/utility CSS: follow the installed version's framework integration; do not assume every version needs PostCSS configuration.
 - Component libraries (framework-specific): add them only after confirming framework (React/Vue/etc).
 
 ## Optional: @testing-library
@@ -103,7 +105,11 @@ If the project uses React, Vue, or Svelte, install the matching testing-library:
 
 ```sh
 # React example
-pnpm add -D @testing-library/react @testing-library/jest-dom
+pnpm add -D @testing-library/react @testing-library/jest-dom @testing-library/user-event
 ```
 
 Then wire up the setup file as described in the Vitest config section above.
+
+## Verify
+
+Run a representative test and the project's typecheck, lint, format check, and build. Verify scripts use installed tools and do not silently pass an empty suite. Consult the installed versions' official docs for config syntax and compatibility before adopting examples.

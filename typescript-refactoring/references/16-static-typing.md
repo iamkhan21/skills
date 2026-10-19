@@ -46,9 +46,8 @@ result.toUpperCase() // No error, but crashes
 function process(data: unknown) {
   // data.foo // Error: 'data' is of type 'unknown'
   
-  if (typeof data === 'object' && data !== null && 'foo' in data) {
-    // Now we can safely access data.foo
-    return (data as { foo: string }).foo
+  if (typeof data === 'object' && data !== null && 'foo' in data && typeof data.foo === 'string') {
+    return data.foo
   }
   
   throw new Error('Invalid data')
@@ -192,11 +191,6 @@ type NonNullableString = NonNullable<string | null | undefined> // string
 ### Custom Utilities
 
 ```ts
-// Deep partial
-type DeepPartial<T> = {
-  [P in keyof T]?: T[P] extends object ? DeepPartial<T[P]> : T[P]
-}
-
 // Make specific keys required
 type RequireKeys<T, K extends keyof T> = T & Required<Pick<T, K>>
 type UserWithEmail = RequireKeys<User, 'email'>
@@ -205,6 +199,8 @@ type UserWithEmail = RequireKeys<User, 'email'>
 type OptionalKeys<T, K extends keyof T> = Omit<T, K> & Partial<Pick<T, K>>
 type UserWithoutRequiredEmail = OptionalKeys<User, 'email'>
 ```
+
+Avoid a generic recursive `DeepPartial` unless its supported shapes are explicit. Optional unions, arrays, functions, and built-ins such as `Date` need different treatment; prefer concrete update types for domain operations.
 
 ## Type Inference
 
@@ -242,7 +238,7 @@ async function fetchUser(id: string): Promise<ApiResponse<User>> {
 
 ## Strict Mode
 
-Enable all strict checks.
+Use the existing compiler checks during a local refactor. Consider stricter options separately if a type-safety migration is in scope. The following options extend beyond the `strict` umbrella and may require substantial changes:
 
 ```json
 // tsconfig.json
@@ -271,9 +267,9 @@ const item: string | undefined = items[10] // Must handle undefined
 
 ## Checklist
 
-- [ ] No `any` types (use `unknown` if type unknown)
+- [ ] No new unbounded `any` or assertions that hide invalid data
 - [ ] Type guards for runtime validation
 - [ ] Discriminated unions for state
 - [ ] Constraints on generics
 - [ ] Explicit return types for public functions
-- [ ] Strict mode enabled
+- [ ] Existing checks pass; compiler-policy changes kept explicit and in scope

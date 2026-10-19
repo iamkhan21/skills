@@ -4,7 +4,7 @@ Goal: get the benefits of FSD-ish boundaries without deep nesting or premature l
 
 ## Default (day 1)
 
-Create only:
+For a new, unopinionated source tree, consider these homes as code appears:
 
 ```
 src/
@@ -14,6 +14,8 @@ src/
 ```
 
 ### What goes where
+
+Do not create empty folders or move working code just to match this tree. Framework routing directories take precedence; this is an optional lightweight convention, not a required FSD migration.
 
 - `src/app/`: app bootstrap, providers, routing, global styles, app-level config.
 - `src/shared/`: shared UI primitives, shared libs/utils, shared API clients, shared config.
@@ -44,7 +46,7 @@ Introduce these when there is real pressure:
 src/features/auth/
   ui/
     login-form.tsx
-    login-form.test.ts
+    login-form.test.tsx
   model/
     use-login.ts
   api/

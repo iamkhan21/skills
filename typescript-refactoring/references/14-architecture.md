@@ -1,6 +1,16 @@
 # Architecture
 
+Use these patterns only for demonstrated boundary pressure within the approved scope. Preserve existing architecture for local refactors; layers, ports, and swappable implementations are options, not a checklist every project must satisfy.
+
 Structure code at the system level for maintainability and scalability.
+
+- [Layers](#layered-architecture)
+- [Ports and adapters](#ports-and-adapters-hexagonal)
+- [Dependency direction](#dependency-direction)
+- [Feature organization](#feature-based-organization)
+- [Common patterns](#common-patterns)
+- [Incremental migration](#strangler-fig-pattern)
+- [Checklist](#checklist)
 
 ## Layered Architecture
 
@@ -307,12 +317,14 @@ class UserServiceFacade implements UserService {
 
 ### Key Principles
 
-- Old and new must coexist — never a "big bang" cutover
+- This pattern lets old and new coexist; use it when incremental rollout justifies the temporary complexity
 - Each step is independently deployable
-- Rollback is always possible (just route back to old code)
+- Verify rollback against data/schema changes, events, and external effects; routing back alone does not undo stateful migrations
 - The facade is temporary scaffolding — remove it when done
 
 ## Checklist
+
+Apply only to architecture changes that are actually in scope:
 
 - [ ] Layers clearly separated
 - [ ] Domain logic isolated from infrastructure

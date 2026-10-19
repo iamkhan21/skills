@@ -67,8 +67,8 @@ test("calculates total for items", () => {
 ### Wrong Query Type
 
 ```typescript
-// BAD: queryBy for existence check
-expect(screen.queryByRole("button")).toBeInTheDocument(); // Silent failure
+// Less helpful diagnostics: this assertion still fails if no button exists
+expect(screen.queryByRole("button")).toBeInTheDocument();
 
 // GOOD: getBy fails fast
 expect(screen.getByRole("button")).toBeInTheDocument();
@@ -92,30 +92,30 @@ screen.getByRole("button", { name: /submit/i });
 
 ## Code Smells as Design Feedback
 
-Use test struggles as signals that the code (not the test) needs improvement:
+Use test struggles as clues, not proof that production code needs restructuring. Check the test setup and requirements first:
 
 | Smell | Meaning |
 |-------|---------|
-| Too many tests per module | Violates SRP — split the module |
-| Complex test setup | Leaked abstractions — extract dependency |
-| Need to mock your own code | Wrong boundaries — use adapter or refactor |
-| Test never fails | Useless — remove it |
+| Many tests per module | May reflect legitimate behavior; look for unrelated responsibilities |
+| Complex test setup | Check helper design, required providers, and boundary coupling |
+| Need to mock your own code | Investigate the boundary and what integration the mock excludes |
+| Test passes after breaking the target behavior | Strengthen the assertion or remove genuinely redundant coverage |
 | Testing private methods | Test public behavior instead |
 | Test name mentions implementation | Rename to describe behavior |
 | Fragile tests (break on refactor) | Testing implementation details |
-| Slow test suite | Too many mocks, consider MSW |
+| Slow test suite | Measure first: real delays, network calls, render cost, and setup overhead |
 
 ## Refactoring Triggers
 
 When tests signal design issues:
 
-1. **Hard to set up** → Accept dependencies via props/context
-2. **Need internal mocks** → Extract to adapter pattern
-3. **Multiple concerns in one test** → Split component/hook
-4. **Testing state instead of output** → Return results via callbacks
+1. **Hard to set up** → Simplify setup; consider a dependency seam only if coupling is the cause
+2. **Need internal mocks** → Check whether a real boundary can be exercised or isolated
+3. **Multiple concerns in one test** → Focus the test before splitting production components
+4. **Testing private state** → Assert observable outcomes; public loading/error state may still be part of the contract
 
 ## Coverage Guidance
 
-- ~70% coverage is sufficient
-- Critical paths > coverage percentage
-- 100% mandate creates perverse incentives — every line counts equally, doesn't distinguish importance
+- Follow the project's coverage requirements; there is no universally sufficient percentage.
+- Prioritize critical paths, failure states, and regressions over percentage gains.
+- Inspect uncovered risky behavior; high coverage alone does not prove useful assertions.

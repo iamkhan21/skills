@@ -86,28 +86,22 @@ function process(value: string | number): string | number {
 }
 ```
 
-### When Inheritance is More Appropriate
+### When a Relationship Needs a Constraint
 
 ```ts
-// Bad: Generics don't enforce relationships
-class Repository<T> {
-  save(item: T): void { ... }
-  find(id: string): T | undefined { ... }
+// Express the required shape; inheritance alone does not constrain T.
+interface Entity {
+  id: string
 }
 
-// Good: Inheritance defines "is-a" relationship
-abstract class Entity {
-  abstract get id(): string
+interface Repository<T extends Entity> {
+  save(item: T): void
+  find(id: string): T | undefined
 }
 
-class UserRepository extends Repository<User> {
-  // User IS-A Entity
-}
-
-// This doesn't make sense
-class StringRepository extends Repository<string> {
-  // string IS-NOT-A Entity with id
-}
+type User = { id: string; name: string }
+type UserRepository = Repository<User>
+// type StringRepository = Repository<string> // Error: string has no id
 ```
 
 ## Generics vs Inheritance vs Composition
@@ -214,29 +208,16 @@ function findByDate<T extends WithId & Timestamped>(
 ## Generic Factories
 
 ```ts
-// Factory pattern with generics
-interface Serializable {
-  serialize(): string
-}
-
-class ModelFactory {
-  private static instances = new Map<string, any>()
-  
-  static create<T extends Serializable>(
-    cls: new (...args: any[]) => T,
-    ...args: ConstructorParameters<typeof cls>
-  ): T {
-    const instance = new cls(...args)
-    const key = instance.constructor.name
-    
-    if (!this.instances.has(key)) {
-      this.instances.set(key, instance)
-    }
-    
-    return this.instances.get(key)
-  }
+// Preserve constructor arguments and result type without a global cache.
+function create<T, Args extends unknown[]>(
+  Constructor: new (...args: Args) => T,
+  ...args: Args
+): T {
+  return new Constructor(...args)
 }
 ```
+
+Direct construction is simpler when no shared creation policy exists. Do not cache instances by class name: names can collide or be minified, later constructor arguments can be ignored, and constructing before a cache lookup still runs side effects.
 
 ## Checklist
 

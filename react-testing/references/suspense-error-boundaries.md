@@ -1,5 +1,7 @@
 # Testing Suspense & Error Boundaries
 
+Use the project's actual boundary component and reset API. `ErrorBoundary` below assumes a wrapper accepting a fallback element; React itself does not export that component. Use a controlled unresolved resource for deterministic loading assertions, not a real network delay.
+
 - [Suspense Fallbacks](#suspense-fallbacks)
 - [Error Boundaries](#error-boundaries)
 - [Combined Patterns](#combined-patterns)
@@ -48,14 +50,11 @@ test("shows fallback for lazy component", async () => {
 
 ```tsx
 // A component that throws
-function BrokenComponent(): JSX.Element {
+function BrokenComponent(): never {
   throw new Error("Something went wrong");
 }
 
 test("renders error fallback when child throws", () => {
-  // Suppress React's error logging in test output
-  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-
   render(
     <ErrorBoundary fallback={<div>Something went wrong</div>}>
       <BrokenComponent />
@@ -64,103 +63,26 @@ test("renders error fallback when child throws", () => {
 
   expect(screen.getByText(/something went wrong/i)).toBeInTheDocument();
 
-  spy.mockRestore();
 });
 ```
 
-### Testing error triggered by user action
+### Async failures
 
-```tsx
-test("shows error UI when API call fails", async () => {
-  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-
-  // MSW handler that returns an error
-  server.use(
-    http.get("/api/data", () => {
-      return new HttpResponse(null, { status: 500 });
-    })
-  );
-
-  render(
-    <ErrorBoundary fallback={<div>Failed to load</div>}>
-      <DataDisplay />
-    </ErrorBoundary>
-  );
-
-  expect(await screen.findByText(/failed to load/i)).toBeInTheDocument();
-
-  spy.mockRestore();
-});
-```
-
-### Testing error boundary reset
-
-```tsx
-test("recovers after error is resolved", async () => {
-  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-  const user = userEvent.setup();
-
-  render(
-    <ErrorBoundary
-      fallback={({ resetErrorBoundary }) => (
-        <div>
-          <p>Error occurred</p>
-          <button onClick={resetErrorBoundary}>Retry</button>
-        </div>
-      )}
-    >
-      <DataDisplay />
-    </ErrorBoundary>
-  );
-
-  expect(await screen.findByText(/error occurred/i)).toBeInTheDocument();
-
-  // Fix the underlying issue (e.g., restore MSW handler)
-  server.resetHandlers();
-
-  await user.click(screen.getByRole("button", { name: /retry/i }));
-  expect(await screen.findByText(/data loaded/i)).toBeInTheDocument();
-
-  spy.mockRestore();
-});
-```
+Error boundaries catch render-time errors, not ordinary event-handler exceptions or arbitrary rejected promises. A failed HTTP request reaches a boundary only if the data layer or component throws during rendering. Otherwise, test the component's own error state.
 
 ## Combined Patterns
 
-### Suspense + Error Boundary
+For loading → error → retry behavior:
 
-```tsx
-test("handles loading → error → retry flow", async () => {
-  const spy = jest.spyOn(console, "error").mockImplementation(() => {});
-  const user = userEvent.setup();
+1. Render with the providers and Suspense boundary actually used by the app.
+2. Keep a controlled request pending and assert the loading state.
+3. Resolve it as an error and await the appropriate error UI.
+4. Set up a successful response before clicking Retry.
+5. Verify Retry invokes the real boundary/cache reset or refetch mechanism; a button with no handler does not test recovery.
+6. Await successful content and verify the fallback disappears.
 
-  server.use(
-    http.get("/api/data", () => new HttpResponse(null, { status: 500 }))
-  );
+Resetting MSW handlers only changes future responses; it does not reset a cached rejection or an error boundary. Restore request handlers and dispose per-test caches in teardown.
 
-  render(
-    <ErrorBoundary fallback={<button>Retry</button>}>
-      <Suspense fallback={<div>Loading...</div>}>
-        <DataDisplay />
-      </Suspense>
-    </ErrorBoundary>
-  );
+## Expected Error Logs
 
-  // Loading state
-  expect(screen.getByText(/loading/i)).toBeInTheDocument();
-
-  // Error state
-  expect(await screen.findByRole("button", { name: /retry/i })).toBeInTheDocument();
-
-  // Fix and retry
-  server.resetHandlers();
-  await user.click(screen.getByRole("button", { name: /retry/i }));
-  expect(await screen.findByText(/data loaded/i)).toBeInTheDocument();
-
-  spy.mockRestore();
-});
-```
-
-### Why suppress console.error?
-
-React logs errors to the console when error boundaries catch them. This is expected behavior, but it clutters test output. The `jest.spyOn(console, "error").mockImplementation(() => {})` pattern suppresses this noise. Always restore it after the test to avoid masking real errors.
+Prefer the runner's or React version's supported error-reporting setup. If an expected error needs filtering, match that error narrowly, preserve unrelated console messages, and restore spies in `afterEach` or `finally` so failed assertions cannot leak suppression into other tests.

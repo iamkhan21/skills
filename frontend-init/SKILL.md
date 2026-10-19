@@ -1,67 +1,55 @@
 ---
 name: frontend-init
-description: Standardizes an already-scaffolded frontend TypeScript web app with baseline tooling, structure, and conventions. Use when setting up or aligning pnpm + TypeScript strict + path aliases, Vitest, Oxc (oxlint/oxfmt), and a progressive FSD-style folder layout, or when the user asks about initial project rules and UI library choices.
+description: Configure an already-scaffolded TypeScript frontend's tooling and conventions. Use for initial setup or alignment of package scripts, strict TypeScript, path aliases, Vitest, Oxc, and lightweight feature folders. Not for generating a new app or replacing an established toolchain without a migration request.
 ---
 
-# Frontend Init (Scaffolded Project)
+# Frontend Init
 
 ## Quick start
 
-1) Confirm baseline assumptions
-- Project already scaffolded (no build-tool scaffolding in this skill)
-- Package manager is pnpm
-- TypeScript is used (or will be added)
-
-2) Ask one decision question early
-- UI/CSS: "Do you want a UI/component library or CSS framework? If yes, which one?" (If none, proceed with plain CSS Modules or the existing setup.)
-
-3) Apply baseline setup
-- Tooling: add Vitest + Oxc lint/format and wire `package.json` scripts
-- TypeScript: enable strict mode + DOM libs + `@/*` path alias
-- Structure: create progressive FSD-style folders (`src/app`, `src/shared`, `src/features`)
-
-Links:
-- Tooling details: see `frontend-init/references/tooling.md`
-- TypeScript settings: see `frontend-init/references/typescript.md`
-- Folder structure: see `frontend-init/references/structure.md`
+1. Inspect project instructions, package scripts, lockfile, framework, and configs.
+2. Identify missing setup; preserve working conventions and dependencies.
+3. For an unopinionated scaffold, default to pnpm, strict TypeScript, Vitest, and Oxc. State these defaults before applying them.
+4. Configure only what the requested baseline needs, then verify it.
 
 ## Workflow
 
-### 1) Baseline checks
+### 1. Establish scope
 
-- Ensure `pnpm -v` works; prefer `pnpm install`
-- Confirm Node version is compatible with the project tooling
+- Confirm the app is already scaffolded and check supported Node/tool versions.
+- Use the package manager declared by the repo; do not generate a second lockfile.
+- Ask only about decisions that affect the requested setup and cannot be inferred. A tooling-only task does not need a UI-library interview.
+- Keep the existing CSS/UI approach. Ask before introducing a new one.
 
-### 2) Tooling baseline (test + lint + format)
+### 2. Fill tooling gaps
 
-- Add dev deps: `vitest`, `oxlint`, `oxfmt`
-- Create an Oxlint config (`oxlint --init`)
-- Add scripts:
-  - `typecheck` (runs `tsc --noEmit`)
-  - `test`, `test:run`
-  - `lint`, `lint:fix`
-  - `fmt`, `fmt:check`
+- Reuse a working test runner, linter, and formatter rather than installing alternatives alongside them.
+- If missing, add the defaults and scripts for typecheck, test, lint, and format. Preserve existing script names where practical.
+- Check the installed version's documentation before using version-sensitive config or CLI options.
+- See [tooling](references/tooling.md) for setup examples.
 
-Details: `frontend-init/references/tooling.md`
+### 3. Align TypeScript and imports
 
-### 3) TypeScript baseline
+- Enable strict checking in the app config; assess existing errors before changing an established project.
+- Preserve framework compiler settings and separate browser, server, and test environments.
+- Add `@/*` only if useful or requested; verify both TypeScript and runtime resolution.
+- See [TypeScript](references/typescript.md).
 
-- Turn on `strict`
-- Ensure DOM libs are present
-- Add `@/*` alias for `src/*` and make sure tooling resolves it
+### 4. Keep structure proportional
 
-Details: `frontend-init/references/typescript.md`
+- Preserve framework-owned routing and directory conventions.
+- Use shallow feature folders when code needs a home; do not create empty layers or reorganize working code for symmetry.
+- See [structure](references/structure.md).
 
-### 4) Progressive FSD structure
+## Guardrails
 
-- Create minimal layers only:
-  - `src/app/`
-  - `src/shared/`
-  - `src/features/`
-- Add `entities/pages/widgets` only when the project needs them
+- Do not scaffold, migrate frameworks, upgrade unrelated dependencies, or replace existing tools as incidental setup.
+- Do not overwrite config wholesale or remove framework-specific lint rules without an equivalent check.
+- Keep tool preferences as defaults, not requirements that override project instructions.
 
-Details: `frontend-init/references/structure.md`
+## Verification
 
-## Advanced
-
-- Add UI/CSS dependencies after the user chooses a direction; keep the baseline independent.
+- Run the configured typecheck, non-watch tests, lint, format check, and build where available.
+- If adding a test runner, run a small representative test; an empty suite does not prove the setup works.
+- Verify an alias import through the build and test runner if aliases changed.
+- Report changes, actual check results, and anything not verified.

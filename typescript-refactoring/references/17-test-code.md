@@ -7,7 +7,7 @@ Tests need refactoring too. Keep them readable and maintainable.
 ## Test Behavior, Not Implementation
 
 ```ts
-// Bad: Testing implementation details
+// Only an implementation-detail test if loading state is private
 describe('UserService', () => {
   it('sets isLoading to true then false', async () => {
     const service = new UserService()
@@ -18,7 +18,7 @@ describe('UserService', () => {
   })
 })
 
-// Good: Testing observable behavior
+// Complementary: Test the returned data contract
 describe('UserService', () => {
   it('returns users after loading', async () => {
     const service = new UserService()
@@ -30,6 +30,8 @@ describe('UserService', () => {
 ```
 
 ## Protect The Behavior Surface First
+
+Public loading/error state can be observable behavior. Keep transition coverage when callers or UI depend on it; a returned-data assertion does not replace a pending-state assertion. Distinguish redundant private-mechanism tests from real contracts before deleting coverage.
 
 Before reorganizing tests, make sure they cover the behavior most likely to regress.
 

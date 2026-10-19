@@ -11,7 +11,7 @@ Create a custom render that includes required providers:
 ```tsx
 // test-utils.tsx
 import { render, RenderOptions } from "@testing-library/react";
-import { BrowserRouter } from "react-router-dom";
+import { MemoryRouter } from "react-router-dom";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 function createTestQueryClient() {
@@ -27,14 +27,16 @@ export function renderWithProviders(
   const queryClient = createTestQueryClient();
   const AllProviders: React.FC<{ children: React.ReactNode }> = ({ children }) => (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <MemoryRouter initialEntries={["/initial-path"]}>
         {children}
-      </BrowserRouter>
+      </MemoryRouter>
     </QueryClientProvider>
   );
   return render(ui, { wrapper: AllProviders, ...options });
 }
 ```
+
+Include only providers the test needs. Keep the client and store stable for the lifetime of a render, but fresh across tests. Disable query retries unless testing retry behavior, and dispose clients/subscriptions in teardown when they schedule background work. Use the installed router/store APIs rather than introducing providers just for a shared helper.
 
 ## Common Providers
 
@@ -72,9 +74,10 @@ function renderWithRouter(ui: React.ReactElement) {
 }
 
 function renderWithQueryClient(ui: React.ReactElement) {
+  const queryClient = createTestQueryClient();
   return render(ui, {
     wrapper: ({ children }) => (
-      <QueryClientProvider client={new QueryClient()}>
+      <QueryClientProvider client={queryClient}>
         {children}
       </QueryClientProvider>
     ),

@@ -1,23 +1,9 @@
 ---
 name: typescript-refactoring
-description: Use this skill when improving existing TypeScript or JavaScript code without intentionally changing product behavior. Reach for it whenever the user says a file or module is too big, messy, brittle, hard to test, full of duplication, deeply nested, over-coupled, confusingly named, legacy, or in need of cleanup, restructuring, simplification, or technical-debt reduction. Also use it when the user asks how to safely split a large component, untangle a service, reduce complexity, isolate side effects, simplify types, or plan a refactor, even if they never say the word "refactor."
+description: Refactor existing TypeScript or JavaScript without unintended behavior changes. Use for cleanup, duplication, deep nesting, large components, tangled services, complex types, hard-to-test code, or a refactoring plan. Diagnose the actual problem, preserve public contracts, and make small verified changes. Not a substitute for feature design, bug fixing, or a toolchain migration.
 ---
 
 # TypeScript Refactoring
-
-## What This Skill Does
-
-Use this skill to make code easier to understand, test, and change while preserving behavior unless the user explicitly asks for behavior changes.
-
-This skill is especially helpful when the user says things like:
-
-- "clean this up"
-- "this component is doing too much"
-- "this file is too big"
-- "please untangle this"
-- "reduce complexity without changing behavior"
-- "make this easier to test"
-- "how should I restructure this?"
 
 ## Quick Start
 
@@ -28,16 +14,9 @@ This skill is especially helpful when the user says things like:
 5. Make one conceptual transformation at a time.
 6. Verify after each meaningful step.
 
-## Response Shape
+For a small local change, a short scope and verification note is enough. Use a written plan only for multi-step, cross-module, or risky work; do not impose a six-part response on every cleanup.
 
-When responding to the user, prefer this structure:
-
-1. Name the main pain point or smell.
-2. State what is in scope and what is not.
-3. Explain the first refactoring move and why it is the safest useful step.
-4. Explain how behavior will be preserved.
-5. Apply or describe incremental changes.
-6. Call out risks, tradeoffs, and logical next steps.
+Read references selectively from the symptom table below. They are a technique catalog, not a checklist of changes to apply.
 
 ## Core Workflow
 
@@ -61,7 +40,7 @@ If the request is vague, translate it into a concrete target smell before making
 Identify the junction points between the code being changed and the rest of the system.
 
 - Preserve public entry points by default unless the user wants API changes.
-- Name what must stay behaviorally stable.
+- Name what must stay behaviorally stable: values (including falsy and nullish inputs), errors, side-effect order, timing, mutation, and identity where observable.
 - State what is out of scope.
 - If architecture might change, start with the smallest seam that buys safety.
 
@@ -105,41 +84,19 @@ See [references/03-process-heuristics.md](references/03-process-heuristics.md).
 | Outdated formatting / lint issues | Take easy compiler, formatter, and lint wins before deeper refactors | [04-low-hanging-fruit](references/04-low-hanging-fruit.md) |
 | Large-scale migration pressure | Start with a façade, seam, or strangler-style boundary, not a big-bang rewrite | [14-architecture](references/14-architecture.md) |
 
+Treat these as options, not diagnoses from file length or syntax alone. A loop, switch, long function, or repeated block can be the clearest implementation. Preserve it if changing it does not solve the user's problem.
+
 ## Real-World Cases
 
-### Low-Test Or Legacy Code
-
-When behavior is unclear, caution is part of the refactor.
-
-- Add characterization tests for the behavior that already exists.
-- Name the risky behavior surface before changing structure: inputs, outputs, side effects, ordering, fallbacks, errors.
-- Preserve suspicious legacy behavior unless the user explicitly wants a bug fix.
-- Document assumptions and unknowns instead of bluffing certainty.
-- Prefer narrow seams and reversible steps.
-
-When describing the safety net, name a few concrete checks rather than saying "add tests" in the abstract.
-
-### Vague Cleanup Requests
-
-If the user says "make it cleaner" or "tidy this up":
-
-- identify the likely dominant smell
-- state the non-goals
-- choose the smallest change that meaningfully reduces pain
-
-Do not turn a vague request into a broad redesign.
+For legacy code, characterize current behavior (including suspicious quirks) before changing it. Name concrete checks and unknowns instead of claiming equivalence from types alone. Vague cleanup requests justify a small local improvement, not a broad redesign.
 
 ### Refactor + Feature Requests
 
 If the user asks for both refactoring and new behavior:
 
-- acknowledge both goals
-- separate structural cleanup from feature work
-- prefer refactor-first then feature, or at least clearly distinct phases
-- make the packaging explicit: separate commits, review sections, or staged phases
-- keep the first phase small and local
-
-Do not present combined feature work as a pure refactor.
+- separate structural cleanup from behavior changes in small phases or review sections
+- refactor first only when it makes the requested behavior change safer or simpler
+- keep bug fixes explicit rather than presenting them as a pure refactor
 
 ## TypeScript-Specific Guidance
 
@@ -159,34 +116,17 @@ See [references/16-static-typing.md](references/16-static-typing.md) and [refere
 - Do not force declarative or architectural patterns when a simpler local change solves the problem.
 - Do not keep refactoring after the original pain point is clearly addressed.
 
-## Techniques Index
+## Supporting References
 
-| Level | File | Techniques |
-|-------|------|------------|
-| Setup | [04-low-hanging-fruit.md](references/04-low-hanging-fruit.md) | Formatting, linting, language/API features |
-| Code | [05-names.md](references/05-names.md) | Naming problems and solutions |
-| Code | [06-duplication.md](references/06-duplication.md) | DRY, extraction techniques |
-| Code | [07-conditions.md](references/07-conditions.md) | Guard clauses, complexity reduction |
-| Code | [08-functional-pipeline.md](references/08-functional-pipeline.md) | Composition, data flow |
-| Design | [09-abstraction.md](references/09-abstraction.md) | Abstraction levels, leak prevention |
-| Design | [10-side-effects.md](references/10-side-effects.md) | Isolation, command-query separation |
-| Design | [11-error-handling.md](references/11-error-handling.md) | Error types, strategies |
-| Design | [12-generics.md](references/12-generics.md) | Generics, composition |
-| Architecture | [13-module-integration.md](references/13-module-integration.md) | Coupling, cohesion |
-| Architecture | [14-architecture.md](references/14-architecture.md) | Layers, dependencies, strangler fig |
-| Architecture | [15-declarative-style.md](references/15-declarative-style.md) | Declarative patterns |
-| Architecture | [16-static-typing.md](references/16-static-typing.md) | Type design |
-| Support | [17-test-code.md](references/17-test-code.md) | Refactoring tests |
-| Support | [18-comments-docs.md](references/18-comments-docs.md) | Documentation |
+Use [test-code guidance](references/17-test-code.md) when reorganizing tests and [comments/docs guidance](references/18-comments-docs.md) when updating documentation. Other techniques are linked from the symptom table; read only those relevant to the current change.
 
-## Principles
+## Verification And Handoff
 
-- **Diagnose first**: pick the smell before picking the move.
-- **Small steps**: each step should be understandable and reversible.
-- **Behavior preservation**: refactoring changes structure, not product intent.
-- **Scope discipline**: keep in-scope and out-of-scope explicit.
-- **Practicality over purity**: prefer the simplest change that relieves the real pain.
-- **Know when to stop**: stop when the code is materially easier to change and further cleanup has poor payoff.
+- Establish the current check results before editing; distinguish pre-existing failures from regressions.
+- Use the project's installed tools and scripts. Do not install a preferred formatter or reformat unrelated files.
+- Review the diff for changed behavior, public types, accidental deletions, and unrelated churn.
+- Report what became simpler, the checks actually run, and remaining uncertainty. Typechecking alone does not prove runtime equivalence.
+- Keep commits and other repository operations within the user's authorization; example commit names are not instructions to commit.
 
 ## Templates And Quick Reference
 

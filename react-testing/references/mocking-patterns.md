@@ -11,7 +11,7 @@
 
 ## System Boundaries
 
-Mock only what you don't control. True system boundaries include:
+Prefer mocks at boundaries where real behavior is slow, unavailable, or nondeterministic:
 
 - Network requests (APIs, webhooks)
 - Email/SMS gateways, payment APIs
@@ -19,7 +19,7 @@ Mock only what you don't control. True system boundaries include:
 - Browser APIs hard to reproduce in JSDOM (IntersectionObserver, matchMedia)
 - Third-party SDKs (analytics, auth, storage)
 
-**Never mock inside your own React tree**—your components, hooks, utilities, state management.
+Keep your components, hooks, utilities, and state management real by default. Mocking your own external-service adapter is still boundary mocking. A narrow internal mock can be appropriate for isolation, but document the integration it excludes; do not mock the behavior the test is meant to verify.
 
 ## HTTP Requests
 
@@ -44,7 +44,7 @@ import { handlers } from "./handlers";
 
 export const server = setupServer(...handlers);
 
-beforeAll(() => server.listen());
+beforeAll(() => server.listen({ onUnhandledRequest: "error" }));
 afterEach(() => server.resetHandlers());
 afterAll(() => server.close());
 
@@ -62,20 +62,18 @@ test("handles server error", async () => {
 ### fetch Mock
 
 ```typescript
-global.fetch = jest.fn();
-
-beforeEach(() => {
-  fetch.mockClear();
-});
+afterEach(() => jest.restoreAllMocks());
 
 test("fetches user data", async () => {
-  fetch.mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({ id: 1, name: "Test" }),
-  });
+  const fetchSpy = jest.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+    new Response(JSON.stringify({ id: 1, name: "Test" }), {
+      status: 200,
+      headers: { "Content-Type": "application/json" },
+    })
+  );
   
   const user = await getUser(1);
-  expect(fetch).toHaveBeenCalledWith("/api/users/1");
+  expect(fetchSpy).toHaveBeenCalledWith("/api/users/1");
   expect(user.name).toBe("Test");
 });
 ```
@@ -85,31 +83,26 @@ test("fetches user data", async () => {
 ### localStorage / sessionStorage
 
 ```typescript
-const localStorageMock = (() => {
-  let store: Record<string, string> = {};
-  return {
-    getItem: (key: string) => store[key] || null,
-    setItem: (key: string, value: string) => { store[key] = value; },
-    removeItem: (key: string) => { delete store[key]; },
-    clear: () => { store = {}; },
-  };
-})();
-
-Object.defineProperty(window, "localStorage", { value: localStorageMock });
+// Prefer the DOM environment's implementation, with a valid test origin.
+beforeEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
+afterEach(() => {
+  localStorage.clear();
+  sessionStorage.clear();
+});
 ```
 
 ### window.location
 
 ```typescript
-const originalLocation = window.location;
-
-delete (window as any).location;
-window.location = { ...originalLocation, href: "" };
-
-afterAll(() => {
-  window.location = originalLocation;
-});
+const originalUrl = window.location.href;
+beforeEach(() => window.history.replaceState(null, "", "/checkout"));
+afterEach(() => window.history.replaceState(null, "", originalUrl));
 ```
+
+Use this only for same-origin URL state in a configured DOM environment. Do not delete or replace `window.location`; modern environments can make it non-configurable. For navigation, prefer the real memory router, a navigation adapter, or a browser test.
 
 ### IntersectionObserver
 
@@ -121,6 +114,7 @@ class MockIntersectionObserver {
 }
 
 Object.defineProperty(window, "IntersectionObserver", {
+  configurable: true,
   value: MockIntersectionObserver,
 });
 ```
@@ -129,6 +123,7 @@ Object.defineProperty(window, "IntersectionObserver", {
 
 ```typescript
 Object.defineProperty(window, "matchMedia", {
+  configurable: true,
   writable: true,
   value: jest.fn().mockImplementation((query: string) => ({
     matches: false,
@@ -154,20 +149,17 @@ export const analytics = {
   },
 };
 
-// __mocks__/analytics/adapter.ts
-export const analytics = {
-  track: jest.fn(),
-  identify: jest.fn(),
-};
-
-// component.test.ts
-jest.mock("../analytics/adapter");
+// component.test.tsx (transformed Jest module setup)
+jest.mock("../analytics/adapter", () => ({
+  analytics: { track: jest.fn(), identify: jest.fn() },
+}));
 
 import { analytics } from "../analytics/adapter";
 
 test("tracks button click", async () => {
+  const user = userEvent.setup();
   render(<SignupForm />);
-  await userEvent.click(screen.getByRole("button", { name: /sign up/i }));
+  await user.click(screen.getByRole("button", { name: /sign up/i }));
   
   expect(analytics.track).toHaveBeenCalledWith("signup_clicked", {
     source: "homepage",
@@ -175,39 +167,19 @@ test("tracks button click", async () => {
 });
 ```
 
-### Stripe
+### SDK Contracts
 
-```typescript
-jest.mock("@stripe/stripe-js", () => ({
-  loadStripe: jest.fn().mockResolvedValue({
-    redirectToCheckout: jest.fn().mockResolvedValue({ error: null }),
-  }),
-}));
-```
+Mock only the SDK methods the app actually calls, using the installed SDK's types and version. Prefer the app's existing adapter rather than inventing a vendor API. Test the adapter separately if its request mapping is important.
 
 ## Timers
 
 ### Fake Timers
 
 ```tsx
-beforeEach(() => {
-  jest.useFakeTimers();
-});
-
-afterEach(() => {
-  jest.useRealTimers();
-});
-
-test("shows notification after delay", () => {
-  render(<Toast message="Saved!" delay={3000} />);
-  
-  expect(screen.queryByText("Saved!")).not.toBeInTheDocument();
-  
-  jest.advanceTimersByTime(3000);
-  
-  expect(screen.getByText("Saved!")).toBeInTheDocument();
-});
+const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime });
 ```
+
+Enable fake timers before setup. Advance React-triggering timers inside `act`, unmount components, flush remaining timers, and restore real timers. See [async patterns](async-patterns.md) for the complete lifecycle.
 
 ## React Context
 
@@ -264,6 +236,8 @@ test.each([
 
 ## Don't Mock These
 
+These are defaults, not absolute prohibitions:
+
 | Avoid Mocking | Reason |
 |---------------|--------|
 | Your components | Test real integration |
@@ -271,3 +245,5 @@ test.each([
 | Internal utilities | Test actual behavior |
 | State management | Use real store with test state |
 | React Router | Use `<MemoryRouter>` wrapper |
+
+Restore globals changed with `Object.defineProperty` using their original property descriptors (or delete a newly added property) in teardown. `restoreAllMocks` does not undo arbitrary global assignments. Observer stubs alone do not exercise visibility behavior; drive observer callbacks or use a real browser when that behavior matters.

@@ -8,9 +8,14 @@ Each skill lives in its own folder and includes:
 
 ## Skills in this repo
 
-- `frontend-init/`: baseline a scaffolded TypeScript frontend (tooling, strict TS, scripts, aliases, basic folder structure)
-- `react-testing/`: write and debug React tests (Testing Library patterns, queries, utilities, mocking boundaries)
-- `refactoring/`: systematic refactoring workflow and technique catalog (small steps, guardrails, templates)
+- [frontend-init](frontend-init/SKILL.md): configure missing tooling and conventions in a scaffolded TypeScript frontend without replacing a working setup
+- [modern-ui-page](modern-ui-page/SKILL.md): build or polish a page with intentional visual direction, accessible interactions, and responsive behavior
+- [react-testing](react-testing/SKILL.md): write and debug React tests with Testing Library, including async UI, providers, and mocking boundaries
+- [typescript-refactoring](typescript-refactoring/SKILL.md): simplify TypeScript or JavaScript while preserving behavior through small, verified changes
+
+## Using a skill
+
+Load the relevant `SKILL.md` in your agent, or point the agent to it with your task. Read linked references only as needed. Installation and discovery depend on the host; these playbooks do not require a particular model or agent framework.
 
 ## Adding a new skill
 

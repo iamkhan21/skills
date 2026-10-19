@@ -8,7 +8,7 @@ Return early to reduce nesting.
 
 ```ts
 // Before: Nested conditionals
-function processPayment(amount: number, user: User) {
+function processPayment(amount: number, user: User | null) {
   if (user) {
     if (user.isActive) {
       if (amount > 0) {
@@ -30,11 +30,11 @@ function processPayment(amount: number, user: User) {
 }
 
 // After: Guard clauses
-function processPayment(amount: number, user: User) {
+function processPayment(amount: number, user: User | null) {
   if (!user) return { success: false, error: 'User not found' }
   if (!user.isActive) return { success: false, error: 'User inactive' }
-  if (amount <= 0) return { success: false, error: 'Invalid amount' }
-  if (user.balance < amount) return { success: false, error: 'Insufficient funds' }
+  if (!(amount > 0)) return { success: false, error: 'Invalid amount' }
+  if (!(user.balance >= amount)) return { success: false, error: 'Insufficient funds' }
 
   user.balance -= amount
   return { success: true }
@@ -80,7 +80,7 @@ function getUserStatus(user?: User): string {
 
 ## Replace Conditionals with Strategy Pattern
 
-For complex conditional logic, use polymorphism.
+Keep a readable switch by default. Consider a function table or strategy only when independently varying behavior or repeated dispatch makes it simpler; the class-based example below is an option, not a required upgrade.
 
 ```ts
 // Before: Complex switch/if-else
@@ -136,15 +136,17 @@ const shippingStrategies: Record<string, ShippingStrategy> = {
 }
 
 function calculateShipping(order: Order): number {
+  if (!Object.prototype.hasOwnProperty.call(shippingStrategies, order.shippingMethod)) {
+    throw new Error(`Unknown shipping method: ${order.shippingMethod}`)
+  }
   const strategy = shippingStrategies[order.shippingMethod]
-  if (!strategy) throw new Error(`Unknown shipping method: ${order.shippingMethod}`)
   return strategy.calculate(order)
 }
 ```
 
 ## Replace Conditionals with Polymorphism
 
-When conditionals check object type, use polymorphism instead.
+For a closed union, a discriminated-union switch is often clearer and preserves the data contract. Polymorphism is an option when behavior already belongs to extensible objects; converting plain data into classes is an API change, not merely branch cleanup.
 
 ```ts
 // Before: Type checking
@@ -211,7 +213,7 @@ if (canModerate(user)) {
 
 ## Null Object Pattern
 
-Replace null checks with null object.
+Consider a null object only when a no-op implementation has the same intended semantics as absence. Preserve distinctions needed for validation, logging, or errors, and preserve existing empty-value checks.
 
 ```ts
 // Before: Null checks everywhere
@@ -231,7 +233,7 @@ interface Notifiable {
 class User implements Notifiable {
   constructor(private email: string) {}
   notify(message: string): void {
-    emailService.send(this.email, message)
+    if (this.email) emailService.send(this.email, message)
   }
 }
 
@@ -250,6 +252,6 @@ function sendNotification(user: Notifiable) {
 
 - [ ] Guard clauses used for early returns
 - [ ] Ternary for simple conditions only
-- [ ] Complex conditionals replaced with strategy/pattern
+- [ ] Dispatch kept simple; patterns introduced only for demonstrated pressure
 - [ ] Boolean logic extracted to named functions
-- [ ] Null object pattern considered for null handling
+- [ ] Null, falsy, and `NaN` behavior preserved; no-op handling does not hide failures

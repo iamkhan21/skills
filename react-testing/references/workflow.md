@@ -12,13 +12,13 @@ Before writing tests, clarify:
 1. **Which behaviors matter?** Happy path, validation, error states, edge cases
 2. **Observable outcomes?** Visible text, element presence, navigation, callbacks, network calls
 3. **Test environment?** Jest or Vitest, custom render helper, test file location
-4. **Which are deep modules?** Push logic into hooks/utilities behind simple interfaces
+4. **What stays real?** Identify required providers and external boundaries
 
-Ask: "Which component or flow, what are its critical behaviors, and how do you run tests?"
+Infer these from the request and repository first. Ask only when a missing answer changes what should be tested.
 
 ## TDD Loop
 
-Use vertical slices (tracer bullets), not horizontal:
+When implementing behavior test-first, use small vertical slices:
 
 ```
 WRONG: Write all tests → Write all code
@@ -30,7 +30,7 @@ Each cycle:
 1. **Pick one behavior** — "submits valid form", "shows spinner while loading"
 2. **Write one failing test** — Express behavior from user's perspective
 3. **Write minimal implementation** — Just enough to pass
-4. **Refactor** — Extract hooks, utilities, deepen modules
+4. **Refactor if needed** — Remove actual duplication or clarify intent; extraction is optional
 
 ### Example Cycle
 
@@ -43,13 +43,8 @@ test("shows error when email is invalid", async () => {
   expect(await screen.findByText(/invalid email/i)).toBeInTheDocument();
 });
 
-// 2. Write minimal code
-const [error, setError] = useState("");
-if (!email.includes("@")) setError("invalid email");
-
-// 3. Refactor (after green)
-// Extract email validation to utility
-// Extract form state to custom hook
+// 2. Implement validation in the submission handler, not during render.
+// 3. Rerun the test, then simplify only if it improves clarity.
 ```
 
 ## Refactoring Tests
@@ -62,6 +57,7 @@ After green, refactor test code too:
 - Remove redundant assertions
 
 Only refactor while tests are green.
+For an existing failure, diagnose it first; do not change intended behavior or weaken assertions just to get green. Adding tests alone does not authorize restructuring production code.
 
 ## Per-Test Checklist
 
@@ -70,6 +66,6 @@ Only refactor while tests are green.
 [ ] Uses public interfaces only: render, screen, props, callbacks
 [ ] Would survive internal refactors
 [ ] Covers one logical behavior
-[ ] Only mocks system boundaries
+[ ] Mocks are narrow and do not replace the behavior under test
 [ ] Setup is straightforward
 ```

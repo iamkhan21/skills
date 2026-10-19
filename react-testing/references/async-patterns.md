@@ -8,19 +8,20 @@
 
 | Method | Use When |
 |--------|----------|
-| `findBy*` | Waiting for single element to appear |
-| `waitFor` | Waiting for condition, multiple assertions |
+| `findBy*` / `findAllBy*` | Waiting for element(s) to appear |
+| `waitFor` | Waiting for an eventual assertion, such as a callback |
 
 ```typescript
 // findBy: element appears
 expect(await screen.findByText(/loaded/i)).toBeInTheDocument();
 
-// waitFor: multiple conditions
+// waitFor: one focused condition (retries until the assertion stops throwing)
 await waitFor(() => {
   expect(screen.getByRole("status")).toHaveTextContent(/success/i);
-  expect(screen.getByRole("button")).toBeEnabled();
 });
 ```
+
+Perform clicks and other side effects outside `waitFor`. Returning `false` does not trigger a retry; the callback must throw. A removal helper requires the element to exist initially; for an already-absent element, assert with `queryBy*` instead.
 
 ## Common Patterns
 
@@ -38,15 +39,23 @@ await waitFor(() => expect(mockCallback).toHaveBeenCalled());
 ## Fake Timers
 
 ```tsx
+import { act, cleanup } from "@testing-library/react";
+
 beforeEach(() => jest.useFakeTimers());
-afterEach(() => jest.useRealTimers());
+afterEach(() => {
+  cleanup(); // cancel component-owned timers before flushing the remainder
+  jest.runOnlyPendingTimers();
+  jest.useRealTimers();
+});
 
 test("shows notification after delay", async () => {
   render(<Toast delay={3000} />);
   
   expect(screen.queryByText(/saved/i)).not.toBeInTheDocument();
   
-  jest.advanceTimersByTime(3000);
+  await act(async () => {
+    jest.advanceTimersByTime(3000);
+  });
   
   expect(screen.getByText(/saved/i)).toBeInTheDocument();
 });
@@ -59,3 +68,5 @@ test("handles async timers", async () => {
   });
 });
 ```
+
+When fake timers and user-event are combined, use `userEvent.setup({ advanceTimers: jest.advanceTimersByTime })` (or the Vitest equivalent). Do not work around timeouts with `delay: null`. Use the runner's async timer APIs when timer callbacks themselves await work; bound advancement for polling instead of running every timer indefinitely.
